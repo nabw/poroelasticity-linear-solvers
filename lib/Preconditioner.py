@@ -1,5 +1,5 @@
 from petsc4py import PETSc
-from AndersonAcceleration import AndersonAcceleration
+from lib.AndersonAcceleration import AndersonAcceleration
 
 
 class PreconditionerCC(object):
@@ -17,6 +17,7 @@ class PreconditionerCC(object):
         self.dofmap_f = V.sub(1).dofmap().dofs()
         self.dofmap_p = V.sub(2).dofmap().dofs()
         self.dofmap_fp = sorted(self.dofmap_f + self.dofmap_p)
+        self.inner_prec_type = inner_prec_type
         self.anderson = AndersonAcceleration(accel_order)
 
     def setUp(self, pc):
@@ -58,18 +59,18 @@ class PreconditionerCC(object):
         self.Mfp_fp = self.M.createSubMatrix(self.is_fp, self.is_fp)
         self.Mp_diff = self.M_diff.createSubMatrix(self.is_p, self.is_p)
 
-        self.pc_s.setType(inner_prec_type)
+        self.pc_s.setType(self.inner_prec_type)
         self.pc_s.setOperators(self.Ms_s)
-        self.pc_f.setType(inner_prec_type)
+        self.pc_f.setType(self.inner_prec_type)
         self.pc_f.setOperators(self.Mf_f)
-        self.pc_p.setType(inner_prec_type)
+        self.pc_p.setType(self.inner_prec_type)
         self.pc_p.setOperators(self.Mp_p)
-        self.pc_fp.setType(inner_prec_type)
+        self.pc_fp.setType(self.inner_prec_type)
         self.pc_fp.setOperators(self.Mfp_fp)
-        self.pc_p_diff.setType(inner_prec_type)
+        self.pc_p_diff.setType(self.inner_prec_type)
         self.pc_p_diff.setOperators(self.Mp_diff)
 
-        if inner_prec_type == "lu":
+        if self.inner_prec_type == "lu":
             factor_method = "mumps"
             self.pc_s.setFactorSolverType(factor_method)
             self.pc_f.setFactorSolverType(factor_method)
@@ -77,7 +78,7 @@ class PreconditionerCC(object):
             self.pc_fp.setFactorSolverType(factor_method)
             self.pc_p_diff.setFactorSolverType(factor_method)
 
-        if inner_prec_type == "hypre":
+        if self.inner_prec_type == "hypre":
             hypre_type = "boomerang"
             self.pc_s.setHYPREType(hypre_type)
             self.pc_f.setHYPREType(hypre_type)
@@ -148,8 +149,8 @@ class Preconditioner:
 
     def get_pc(self):
         flag_3_way = self.pc_type == "diagonal 3-way"
-        ctx = PreconditionerCC(self.P.mat(), self.P_diff.mat(), V,
-                               self.inner_prec_type, flag_3_way, w1, w2, inner_accel_order)
+        ctx = PreconditionerCC(self.P.mat(), self.P_diff.mat(), self.V,
+                               flag_3_way, self.inner_prec_type, 1.0, 0.1, self.inner_accel_order)
         pc = PETSc.PC().create()
         pc.setType('python')
         pc.setPythonContext(ctx)

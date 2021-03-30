@@ -1,3 +1,5 @@
+from fenics import *
+
 
 class AbstractPhysics:
     """
@@ -26,7 +28,7 @@ class AbstractPhysics:
         # Export
         self.output_solutions = parameters["output solutions"]
         self.xdmf = XDMFFile(
-            "output/{}.xdmf".format(parameters["output_name"]))
+            "output/{}.xdmf".format(parameters["output name"]))
         self.xdmf.parameters["functions_share_mesh"] = True
         self.xdmf.parameters["flush_output"] = True
         self.xdmf.parameters["rewrite_function_mesh"] = False
@@ -66,8 +68,8 @@ class AbstractPhysics:
         while self.t < self.tf:
 
             self.t += self.dt
-            self.solve_time_step(t)
+            self.solve_time_step(self.t)
             print("-- Solved time t={:.4f} in {:.3f}s".format(self.t, time() - current_time))
-            if self.export_solutions:
+            if self.output_solutions:
                 self.export(self.t)
             current_time = time()

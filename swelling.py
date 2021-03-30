@@ -1,7 +1,7 @@
 from dolfin import *
 from lib.MeshCreation import generate_square
 from time import time
-from Poromechanics import Poromechanics
+from lib.Poromechanics import Poromechanics
 initial_time = time()
 # Create geometry and set Neumann boundaries
 Nelements = 10
@@ -29,15 +29,15 @@ parameters = {"mu_f": 0.035,
               "kf": 1e-7,
               "dt": 0.1,
               "t0": 0.0,
-              "tf": 0.1,
+              "tf": 1.0,
               "Kdr": 3700,  # Using isotropic formula. Kdr = 2 * mu_s / d + lmbda_s
               "fe degree solid": 2,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
               "maxiter": 1000,
-              "output solutions": False,
+              "output solutions": True,
               # "output_name": "monolithic",
-              "output_name": "swelling",
+              "output name": "swelling",
               "betas": -0.5,
               "betaf": 0.,
               "betap": 1.,
@@ -48,12 +48,30 @@ parameters = {"mu_f": 0.035,
               "solver monitor": True,
               "pc type": "diagonal",
               "inner pc type": "lu",
+              "inner accel order": 0,
               "AAR order": 10,
               "AAR p": 5,
               "AAR omega": 1,
-              "AAR beta": 1}
+              "AAR beta": 1,
+              "dsNs": dsNs,
+              "dsNf": dsNf}
 
 # Set up load terms
+fs_vol = ff_vol = fs_sur = lambda t: Constant((0., 0.))
+
+
+def p_source(t): return Constant(0.0)
+
+
+def ff_sur(t):
+    return Constant(-1e3 * 0.1 * (1 - exp(-(t**2) / 0.25))) * FacetNormal(mesh)
+
+
+parameters["ff_vol"] = ff_vol
+parameters["fs_vol"] = fs_vol
+parameters["ff_sur"] = ff_sur
+parameters["fs_sur"] = fs_sur
+parameters["p_source"] = p_source
 
 problem = Poromechanics(parameters, mesh)
 

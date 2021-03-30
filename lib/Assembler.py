@@ -1,24 +1,26 @@
 from dolfin import *
 
 
-class Assembler:
+class PoromechanicsAssembler:
     """
     Class in charge of assembling the problem matrix and rhs.
     """
 
     def __init__(self, parameters, V):
         self.parameters = parameters
+        self.prec_type = parameters["pc type"]
 
         # Geometric and discretization info
         self.V = V
+        self.mesh = V.mesh()
         self.dim = V.mesh().geometric_dimension()
-        self.dsNs = parameters.dsNs
-        self.dsNf = parameters.dsNf
-        self.ff_vol = parameters.ff_vol
-        self.ff_sur = parameters.ff_sur
-        self.fs_vol = parameters.fs_vol
-        self.fs_sur = parameters.fs_sur
-        self.p_source = parameters.p_source
+        self.dsNs = parameters["dsNs"]
+        self.dsNf = parameters["dsNf"]
+        self.ff_vol = parameters["ff_vol"]
+        self.ff_sur = parameters["ff_sur"]
+        self.fs_vol = parameters["fs_vol"]
+        self.fs_sur = parameters["fs_sur"]
+        self.p_source = parameters["p_source"]
 
         # Memory allocation
         self.A = PETScMatrix()
@@ -35,7 +37,7 @@ class Assembler:
         self.phi0 = Constant(parameters["phi0"])
         self.ks = Constant(parameters["ks"])
         self.kf = Constant(parameters["kf"])
-        self.ikf = inv(kf)
+        self.ikf = inv(self.kf)
         self.dt = Constant(parameters["dt"])
 
         # Aux params
@@ -57,9 +59,10 @@ class Assembler:
 
         us, vf, p = TrialFunctions(self.V)
         v, w, q = TestFunctions(self.V)
+        dx = Measure('dx', domain=self.mesh)
 
         # First base matrix
-        a_s = (self.rhos * self.idt**2 * phis * dot(us, v)
+        a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
                + inner(hooke(eps(us)), eps(v))
                - p * div(self.phis * v)
                - self.phi0 ** 2 * dot(self.ikf * (vf - self.idt * us), v)) * dx
@@ -77,7 +80,7 @@ class Assembler:
         assemble(a_s + a_f + a_p, tensor=self.A)
 
         # Then, preconditioner matrices (FS and DIFF)
-        if prec_type == "undrained":
+        if self.prec_type == "undrained":
             N = self.ks / self.phis**2
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
@@ -95,7 +98,7 @@ class Assembler:
                    + div(self.phi0 * vf) * q
                    + div(self.phis * self.idt * us) * q) * dx
             a_p_diff = 0*q*dx
-        elif prec_type == "diagonal-stab":
+        elif self.prec_type == "diagonal":
             beta_s_hat = self.betas
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
@@ -118,8 +121,8 @@ class Assembler:
             a_p = (self.phis**2 * self.idt / self.ks * p * q
                    + beta_p * p * q
                    + div(self.phi0 * vf) * q) * dx
-            a_p_diff = 0*q*dx
-        elif prec_type == "diagonal-stab-3way":
+            a_p_diff = 0.0*q*dx
+        elif prec_type == "diagonal 3-way":
             beta_s_hat = self.betas
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
@@ -162,10 +165,13 @@ class Assembler:
         """
         return self.P, self.P_diff
 
-    def getRHS(self, t):
+    def getRHS(self, t, us_nm1, us_nm2, uf_nm1, p_nm1):
         """
         Get Dolfin::PETScVector RHS at time t
         """
+
+        v, w, q = TestFunctions(self.V)
+
         # Compute solid residual
         rhs_s_n = dot(self.fs_sur(t), v) * self.dsNs
         lhs_s_n = dot(self.rhos * self.idt**2 * self.phis * (-2. * us_nm1 + us_nm2), v) * \
@@ -184,7 +190,7 @@ class Assembler:
         # Compute pressure residual
         rhs_p_n = 1 / self.rhof * self.p_source(t) * q * dx
 
-        D_sf = div(self.idt * selfphis * (- us_nm1)) * q
+        D_sf = div(self.idt * self.phis * (- us_nm1)) * q
         M_p = self.phis**2 / Constant(self.ks * self.dt) * (- p_nm1) * q
         lhs_p_n = (M_p + D_sf) * dx
         r_p = rhs_p_n - lhs_p_n
