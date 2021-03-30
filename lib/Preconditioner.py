@@ -4,7 +4,7 @@ from AndersonAcceleration import AndersonAcceleration
 
 class PreconditionerCC(object):
 
-    def __init__(self, M, M_diff, V, flag_3_way, inner_prec_type="lu", w1=1.0, w2=0.1):
+    def __init__(self, M, M_diff, V, flag_3_way, inner_prec_type="lu", w1=1.0, w2=0.1, accel_order=0):
         self.M = M
         self.M_diff = M_diff
         self.flag_3_way = flag_3_way
@@ -17,7 +17,7 @@ class PreconditionerCC(object):
         self.dofmap_f = V.sub(1).dofmap().dofs()
         self.dofmap_p = V.sub(2).dofmap().dofs()
         self.dofmap_fp = sorted(self.dofmap_f + self.dofmap_p)
-        self.anderson = AndersonAcceleration(order_preconditioner)
+        self.anderson = AndersonAcceleration(accel_order)
 
     def setUp(self, pc):
         # Here we build the PC object that uses the concrete,
@@ -135,12 +135,13 @@ class PreconditionerCC(object):
 
 
 class Preconditioner:
-    def __init__(self, V, P, P_diff, pc_type, inner_prec_type):
+    def __init__(self, V, P, P_diff, pc_type, inner_prec_type, inner_accel_order):
         self.V = V
         self.P = P
         self.P_diff = P_diff
         self.pc_type = pc_type
         self.inner_prec_type = inner_prec_type
+        self.inner_accel_order = inner_accel_order
         if pc_type not in ("undrained", "diagonal", "diagonal 3-way"):
             import sys
             sys.exit("pc type must be one of undrained, diagonal, diagonal 3-way.")
@@ -148,10 +149,10 @@ class Preconditioner:
     def get_pc(self):
         flag_3_way = self.pc_type == "diagonal 3-way"
         ctx = PreconditionerCC(self.P.mat(), self.P_diff.mat(), V,
-                               self.inner_prec_type, flag_3_way, w1, w2)
+                               self.inner_prec_type, flag_3_way, w1, w2, inner_accel_order)
         pc = PETSc.PC().create()
         pc.setType('python')
         pc.setPythonContext(ctx)
-        pc.setOperators(A.mat())
+        pc.setOperators(self.P.mat())
         pc.setUp()
         return pc

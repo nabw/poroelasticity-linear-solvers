@@ -6,10 +6,10 @@ class Poromechanics(AbstractPhysics):
     def __init__(self, parameters, mesh):
         super().__init__(self, parameters, mesh)
         V = FunctionSpace(mesh,
-                          MixedElement(VectorElement('CG', mesh.ufl_cell(), parameters["fe_degree_solid"]),
+                          MixedElement(VectorElement('CG', mesh.ufl_cell(), parameters["fe degree solid"]),
                                        VectorElement('CG', mesh.ufl_cell(),
-                                                     parameters["fe_degree_fluid"]),
-                                       FiniteElement('CG', mesh.ufl_cell(), parameters["fe_degree_pressure"])))
+                                                     parameters["fe degree fluid"]),
+                                       FiniteElement('CG', mesh.ufl_cell(), parameters["fe degree pressure"])))
         self.V = V
         self.assembler = Assembler(parameters, V)
         # Start by assembling system matrices
@@ -18,11 +18,12 @@ class Poromechanics(AbstractPhysics):
         self.sol = Function(V)
         self.us_nm1, self.uf_nm1, self.p_nm1 = self.sol.split(True)
 
-    def set_bcs(self, bcs):
+    def set_bcs(self, bcs, bcs_diff):
         """
         Set boundary conditions to both physics. Assumed to be constant.
         """
         self.bcs = bcs
+        self.bcs_diff = bcs_diff
 
     def create_solver(self, A, P, P_diff):
 
@@ -40,10 +41,10 @@ class Poromechanics(AbstractPhysics):
         monitor_convergence=self.parameters["solver monitor"]
         if solver_type == "AAR":
             from AAR import AAR
-            order=self.parameters["aar order"]
-            p=self.parameters["aar p"]
-            omega=self.parameters["aar omega"]
-            beta=self.parameters["aar beta"]
+            order=self.parameters["AAR order"]
+            p=self.parameters["AAR p"]
+            omega=self.parameters["AAR omega"]
+            beta=self.parameters["AAR beta"]
             return AAR(order, p, omega, beta, A.mat(), x0 = None, pc = pc,
                        atol = atol, rtol = rtol, maxiter = maxiter, monitor_convergence = monitor_convergence)
         else:
@@ -67,6 +68,8 @@ class Poromechanics(AbstractPhysics):
         for bc in self.bcs:
             for obj in [A, P, P_diff, b]:
                 bc.apply(obj)
+        for b in self.bcs_diff:
+            b.apply(P_diff)
         solver=self.create_solver(A, P, P_diff)
         solver.solve(b.vec(), self.sol.vector().vec())
 
