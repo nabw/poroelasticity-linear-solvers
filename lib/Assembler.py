@@ -156,6 +156,12 @@ class Assembler:
         """
         return self.A
 
+    def getPreconditioners(self):
+        """
+        Return Dolfin::PETScMatrix, convenient for BCs.
+        """
+        return self.P, self.P_diff
+
     def getRHS(self, t):
         """
         Get Dolfin::PETScVector RHS at time t

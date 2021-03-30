@@ -8,13 +8,12 @@ class AbstractPhysics:
         """
         Constructor
         """
-
         self.parameters = parameters
         self.mesh = mesh
         self.dim = mesh.topology().dim()
 
         # First assert that all required variables are in the parameters dictionary
-        required_fields = ["t0", "tf", "dt", "output_name"]
+        required_fields = ["t0", "tf", "dt", "output name"]
         assert all([x in parameters.keys() for x in required_fields]
                    ), "Missing arguments in parameters: {}".format(required_fields)
 
@@ -25,6 +24,7 @@ class AbstractPhysics:
         self.dt = parameters["dt"]
 
         # Export
+        self.output_solutions = parameters["output solutions"]
         self.xdmf = XDMFFile(
             "output/{}.xdmf".format(parameters["output_name"]))
         self.xdmf.parameters["functions_share_mesh"] = True
@@ -47,7 +47,7 @@ class AbstractPhysics:
         self.xdmf.write(self.uf_nm1, time)
         self.xdmf.write(self.p_nm1, time)
 
-    def solve(self, f_vol_solid, f_sur_solid, f_vol_fluid, f_sur_fluid, p_source=None):
+    def solve(self):
         """
         Solve poromechanics problem. Problem loads are assumed to give a function when evaluated at a specific time. For example:
         f_vol = lambda t: Constant((1,1))
@@ -60,25 +60,14 @@ class AbstractPhysics:
         print("Begining simulation")
         iterations = []
 
-        if self.export_solutions:
-            self.export(0)
-
-        if p_source:
-            pass
-        else:
-            def p_source(t): return Constant(0)
+        if self.output_solutions:
+            self.export(self.t0)
 
         while self.t < self.tf:
 
             self.t += self.dt
-            iter_count = self.solve_time_step(f_vol_solid(
-                self.t), f_sur_solid(self.t), f_vol_fluid(self.t), f_sur_fluid(self.t), p_source(self.t))
-            iterations.append(iter_count)
-            print("-- Solved time t={:.4f} in {:.3f}s and {} iterations".format(self.t,
-                                                                                time() - current_time, iter_count))
+            self.solve_time_step(t)
+            print("-- Solved time t={:.4f} in {:.3f}s".format(self.t, time() - current_time))
             if self.export_solutions:
                 self.export(self.t)
             current_time = time()
-
-        self.iterations = iterations
-        self.avg_iter = self.compute_average_iterations()
