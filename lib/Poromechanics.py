@@ -79,7 +79,7 @@ class Poromechanics(AbstractPhysics):
 
         # Update solution
         assign(self.us_nm2, self.us_nm1)
-        us, uf, p = self.sol.split()
+        us, uf, p = self.sol.split(True)
         assign(self.us_nm1, us)
         assign(self.uf_nm1, uf)
         assign(self.p_nm1, p)

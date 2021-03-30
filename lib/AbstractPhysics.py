@@ -1,4 +1,5 @@
 from fenics import *
+from mpi4py import MPI
 
 
 class AbstractPhysics:
@@ -37,6 +38,13 @@ class AbstractPhysics:
         self.uf_nm1 = None
         self.p_nm1 = None
 
+        self.comm = MPI.COMM_WORLD
+        self.rank = self.comm.Get_rank()
+
+    def pprint(self, *args):
+        if self.rank == 0:
+            print(*args)
+
     def export(self, time):
         """
         Export solutions, assumed to be independent (coming from collapsed spaces).
@@ -59,7 +67,7 @@ class AbstractPhysics:
 
         from time import time
         current_time = time()
-        print("Begining simulation")
+        self.pprint("Begining simulation")
         iterations = []
 
         if self.output_solutions:
@@ -69,7 +77,7 @@ class AbstractPhysics:
 
             self.t += self.dt
             self.solve_time_step(self.t)
-            print("-- Solved time t={:.4f} in {:.3f}s".format(self.t, time() - current_time))
+            self.pprint("-- Solved time t={:.4f} in {:.3f}s".format(self.t, time() - current_time))
             if self.output_solutions:
                 self.export(self.t)
             current_time = time()

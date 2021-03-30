@@ -41,7 +41,7 @@ parameters = {"mu_f": 0.035,
               "betas": -0.5,
               "betaf": 0.,
               "betap": 1.,
-              "solver type": "AAR",  # direct, iterative, AAR
+              "solver type": "gmres",  # cg, gmres, AAR
               "solver rtol": 1e-8,
               "solver atol": 1e-12,
               "solver maxiter": 1000,
