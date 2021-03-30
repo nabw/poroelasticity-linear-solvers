@@ -4,7 +4,7 @@ from time import time
 from lib.Poromechanics import Poromechanics
 initial_time = time()
 # Create geometry and set Neumann boundaries
-Nelements = 10
+Nelements = 20
 side_length = 1e-2
 mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE = generate_square(
     Nelements, side_length)
@@ -23,9 +23,9 @@ parameters = {"mu_f": 0.035,
               "rhof": 1e3,
               "rhos": 1e3,
               "phi0": 0.1,
-              "mu_s": 700,
-              "lmbda": 3000,
-              "ks": 1e8,
+              "mu_s": 4000,
+              "lmbda": 700,
+              "ks": 1e3,
               "kf": 1e-7,
               "dt": 0.1,
               "t0": 0.0,
@@ -35,19 +35,19 @@ parameters = {"mu_f": 0.035,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
               "maxiter": 1000,
-              "output solutions": True,
+              "output solutions": False,
               # "output_name": "monolithic",
               "output name": "swelling",
               "betas": -0.5,
               "betaf": 0.,
               "betap": 1.,
               "solver type": "gmres",  # cg, gmres, AAR
-              "solver rtol": 1e-8,
+              "solver rtol": 1e-10,
               "solver atol": 1e-12,
               "solver maxiter": 1000,
               "solver monitor": True,
-              "pc type": "diagonal",
-              "inner pc type": "lu",
+              "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
+              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu
               "inner accel order": 0,
               "AAR order": 10,
               "AAR p": 5,

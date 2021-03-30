@@ -43,7 +43,7 @@ class AbstractPhysics:
 
     def pprint(self, *args):
         if self.rank == 0:
-            print(*args)
+            print(*args, flush=True)
 
     def export(self, time):
         """

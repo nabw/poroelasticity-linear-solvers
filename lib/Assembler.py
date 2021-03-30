@@ -52,7 +52,7 @@ class PoromechanicsAssembler:
     def assemble(self):
 
         def hooke(ten):
-            return 2 * self.mu_s * ten + self.lmbda * tr(ten) * Identity(ten.ufl_shape[0])
+            return 2 * self.mu_s * ten + self.lmbda * tr(ten) * Identity(self.dim)
 
         def eps(vec):
             return sym(grad(vec))
@@ -180,7 +180,6 @@ class PoromechanicsAssembler:
 
         # Compute fluid residual
         rhs_f_n = dot(self.ff_sur(t), w) * self.dsNf
-
         lhs_f = dot(self.rhof * self.idt * self.phi0 * (- uf_nm1), w) + self.phi0**2 * \
             dot(self.ikf * (-self.idt * (-us_nm1)), w)
         lhs_f_n = lhs_f * dx

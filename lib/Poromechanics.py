@@ -56,12 +56,13 @@ class Poromechanics(AbstractPhysics):
             solver = PETSc.KSP().create()
             solver.setOperators(A.mat())
             solver.setType(solver_type)
-            solver.setTolerances(atol, rtol, 1e20, maxiter)
+            solver.setTolerances(rtol, atol, 1e20, maxiter)
             solver.setPC(pc)
             if solver_type == "gmres":
                 solver.setGMRESRestart(maxiter)
             if monitor_convergence:
                 PETSc.Options().setValue("-ksp_monitor", None)
+            solver.setFromOptions()
             return solver
 
     def solve_time_step(self, t):

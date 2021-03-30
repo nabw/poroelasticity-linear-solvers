@@ -79,7 +79,7 @@ class PreconditionerCC(object):
             self.pc_p_diff.setFactorSolverType(factor_method)
 
         if self.inner_prec_type == "hypre":
-            hypre_type = "boomerang"
+            hypre_type = "boomeramg"
             self.pc_s.setHYPREType(hypre_type)
             self.pc_f.setHYPREType(hypre_type)
             self.pc_p.setHYPREType(hypre_type)
