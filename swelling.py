@@ -45,7 +45,7 @@ parameters = {"mu_f": 0.035,
               "solver atol": 1e-10,
               "solver maxiter": 1000,
               "solver monitor": True,
-              "solver type": "gmres",  # cg, gmres, AAR
+              "solver type": "AAR",  # cg, gmres, AAR
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
               "inner pc type": "lu",  # bjacobi, ilu, hypre, lu
               "inner accel order": 0,
