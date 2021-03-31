@@ -37,12 +37,12 @@ class PoromechanicsAssembler:
         self.phi0 = Constant(parameters["phi0"])
         self.ks = Constant(parameters["ks"])
         self.kf = Constant(parameters["kf"])
-        self.ikf = inv(self.kf)
         self.dt = Constant(parameters["dt"])
 
         # Aux params
         self.phis = 1 - self.phi0
         self.idt = 1/self.dt
+        self.ikf = inv(self.kf)
 
         # Stabilization
         self.betas = Constant(parameters["betas"])
@@ -81,6 +81,7 @@ class PoromechanicsAssembler:
 
         # Then, preconditioner matrices (FS and DIFF)
         if self.prec_type == "undrained":
+            print("Using undrained preconditioner")
             N = self.ks / self.phis**2
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
@@ -89,8 +90,8 @@ class PoromechanicsAssembler:
                    - self.phi0 ** 2 * dot(self.ikf * (- self.idt * us), v)) * dx
 
             a_f = (self.rhof * self.idt * self.phi0 * dot(vf, w)
-                   + 2. * self.mu_f * self.phi0 *
-                   inner(eps(vf), eps(w))
+                   + 2. * self.mu_f *
+                   inner(self.phi0 * eps(vf), eps(w))
                    - p * div(self.phi0 * w)
                    + self.phi0 ** 2 * dot(self.ikf * (vf - self.idt * us), w)) * dx
 
@@ -99,6 +100,7 @@ class PoromechanicsAssembler:
                    + div(self.phis * self.idt * us) * q) * dx
             a_p_diff = 0*q*dx
         elif self.prec_type == "diagonal":
+            print("Using diagonal preconditioner", flush=True)
             beta_s_hat = self.betas
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
@@ -109,8 +111,7 @@ class PoromechanicsAssembler:
             beta_f_hat = self.betaf
 
             a_f = (self.rhof * self.idt * self.phi0 * dot(vf, w)
-                   + 2. * self.mu_f * self.phi0 *
-                   inner(eps(vf), eps(w))
+                   + 2. * self.mu_f * inner(self.phi0 * eps(vf), eps(w))
                    - p * div(self.phi0 * w)
                    + (1. + beta_f_hat) * self.phi0**2 * dot(self.ikf * vf, w)) * dx
 
@@ -123,6 +124,7 @@ class PoromechanicsAssembler:
                    + div(self.phi0 * vf) * q) * dx
             a_p_diff = 0.0*q*dx
         elif prec_type == "diagonal 3-way":
+            print("Using diagonal 3-way preconditioner")
             beta_s_hat = self.betas
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
@@ -173,13 +175,15 @@ class PoromechanicsAssembler:
         v, w, q = TestFunctions(self.V)
 
         # Compute solid residual
-        rhs_s_n = dot(self.fs_sur(t), v) * self.dsNs
+        rhs_s_n = dot(self.fs_sur(t), v) * self.dsNs + self.phis * \
+            self.rhos * dot(self.fs_vol(t), v) * dx
         lhs_s_n = dot(self.rhos * self.idt**2 * self.phis * (-2. * us_nm1 + us_nm2), v) * \
             dx - self.phi0**2 * dot(self.ikf * (- self.idt * (- us_nm1)), w) * dx
         r_s = rhs_s_n - lhs_s_n
 
         # Compute fluid residual
-        rhs_f_n = dot(self.ff_sur(t), w) * self.dsNf
+        rhs_f_n = dot(self.ff_sur(t), w) * self.dsNf + self.phi0 * \
+            self.rhof * dot(self.ff_vol(t), w) * dx
         lhs_f = dot(self.rhof * self.idt * self.phi0 * (- uf_nm1), w) + self.phi0**2 * \
             dot(self.ikf * (-self.idt * (-us_nm1)), w)
         lhs_f_n = lhs_f * dx

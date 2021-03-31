@@ -136,8 +136,9 @@ class PreconditionerCC(object):
 
 
 class Preconditioner:
-    def __init__(self, V, P, P_diff, pc_type, inner_prec_type, inner_accel_order):
+    def __init__(self, V, A, P, P_diff, pc_type, inner_prec_type, inner_accel_order):
         self.V = V
+        self.A = A
         self.P = P
         self.P_diff = P_diff
         self.pc_type = pc_type
@@ -154,6 +155,6 @@ class Preconditioner:
         pc = PETSc.PC().create()
         pc.setType('python')
         pc.setPythonContext(ctx)
-        pc.setOperators(self.P.mat())
+        pc.setOperators(self.A.mat())
         pc.setUp()
         return pc

@@ -30,8 +30,7 @@ parameters = {"mu_f": 0.035,
               "dt": 0.1,
               "t0": 0.0,
               "tf": 0.95,
-              "Kdr": 4700,  # Using isotropic formula. Kdr = 2 * mu_s / d + lmbda_s
-              "fe degree solid": 2,
+              "fe degree solid": 1,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
               "maxiter": 1000,
@@ -45,8 +44,8 @@ parameters = {"mu_f": 0.035,
               "solver atol": 1e-10,
               "solver maxiter": 1000,
               "solver monitor": True,
-              "solver type": "AAR",  # cg, gmres, AAR
-              "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
+              "solver type": "gmres",  # cg, gmres, aar
+              "pc type": "undrained",  # diagonal, undrained, diagonal 3-way
               "inner pc type": "lu",  # bjacobi, ilu, hypre, lu
               "inner accel order": 0,
               "AAR order": 10,

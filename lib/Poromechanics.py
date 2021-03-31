@@ -34,7 +34,7 @@ class Poromechanics(AbstractPhysics):
         pc_type = self.parameters["pc type"]
         inner_pc_type = self.parameters["inner pc type"]
         inner_accel_order = self.parameters["inner accel order"]
-        pc = Preconditioner(self.V, P, P_diff, pc_type, inner_pc_type, inner_accel_order)
+        pc = Preconditioner(self.V, A, P, P_diff, pc_type, inner_pc_type, inner_accel_order)
         pc = pc.get_pc()
 
         # Then create linear solver
@@ -43,7 +43,7 @@ class Poromechanics(AbstractPhysics):
         rtol = self.parameters["solver rtol"]
         maxiter = self.parameters["solver maxiter"]
         monitor_convergence = self.parameters["solver monitor"]
-        if solver_type == "AAR":
+        if solver_type == "aar":
             from lib.AAR import AAR
             order = self.parameters["AAR order"]
             p = self.parameters["AAR p"]
