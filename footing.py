@@ -1,14 +1,17 @@
 from dolfin import *
 from lib.MeshCreation import generate_square
-from time import time
 from lib.Poromechanics import Poromechanics
+from time import time
 import numpy as np
+import sys
 initial_time = time()
-
-N = 10
+if len(sys.argv) > 1:
+    Nelements = int(sys.argv[1])
+else:
+    Nelements = 10
 length = 64
 mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE = generate_square(
-    N, length)
+    Nelements, length)
 
 # Refine on top
 
@@ -118,10 +121,10 @@ parameters = {"mu_f": 1e-3,
               "solver atol": 1e-10,
               "solver maxiter": 1000,
               "solver monitor": True,
-              "solver type": "aar",  # cg, gmres, aar
-              "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
-              "inner ksp type": "preonly",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg
+              "solver type": "gmres",  # cg, gmres, aar
+              "pc type": "undrained",  # diagonal, undrained, diagonal 3-way
+              "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
+              "inner pc type": "asm",  # bjacobi, ilu, hypre, lu, gamg, asm
               "inner rtol": 1e-8,
               "inner atol": 1e-10,
               "inner maxiter": 1000,

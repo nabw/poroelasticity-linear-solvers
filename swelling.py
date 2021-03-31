@@ -1,10 +1,14 @@
 from dolfin import *
 from lib.MeshCreation import generate_square
-from time import time
 from lib.Poromechanics import Poromechanics
+from time import time
+import sys
+
 initial_time = time()
-# Create geometry and set Neumann boundaries
-Nelements = 20
+if len(sys.argv) > 1:
+    Nelements = int(sys.argv[1])
+else:
+    Nelements = 10
 side_length = 1e-2
 mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE = generate_square(
     Nelements, side_length)
@@ -55,11 +59,11 @@ parameters = {"mu_f": 0.035,
               "solver maxiter": 1000,
               "solver monitor": True,
               "solver type": "gmres",  # cg, gmres, aar
-              "pc type": "diagonal 3-way",  # diagonal, undrained, diagonal 3-way
-              "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "gamg",  # bjacobi, ilu, hypre, lu, gamg
-              "inner rtol": 0,
-              "inner atol": 1e-8,
+              "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
+              "inner ksp type": "preonly",  # preonly, gmres, cg, bicgstab,
+              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner rtol": 1e-8,
+              "inner atol": 0,
               "inner maxiter": 100,
               "inner accel order": 0,  # >1 diverges always, 1 works with gmres only.
               "AAR order": 10,
