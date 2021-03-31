@@ -29,7 +29,7 @@ parameters = {"mu_f": 0.035,
               "kf": 1e-7,
               "dt": 0.1,
               "t0": 0.0,
-              "tf": 1.0,
+              "tf": 0.95,
               "Kdr": 4700,  # Using isotropic formula. Kdr = 2 * mu_s / d + lmbda_s
               "fe degree solid": 2,
               "fe degree fluid": 2,

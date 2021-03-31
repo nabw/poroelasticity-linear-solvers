@@ -78,6 +78,7 @@ class Poromechanics(AbstractPhysics):
         solver = self.create_solver(A, P, P_diff)
         solver.solve(b.vec(), self.sol.vector().vec())
 
+        self.sol.vector().apply("")
         # Update solution
         assign(self.us_nm2, self.us_nm1)
         us, uf, p = self.sol.split(True)
