@@ -25,27 +25,27 @@ parameters = {"mu_f": 0.035,
               "phi0": 0.1,
               "mu_s": 4000,
               "lmbda": 700,
-              "ks": 1e3,
+              "ks": 1e6,
               "kf": 1e-7,
               "dt": 0.1,
               "t0": 0.0,
               "tf": 1.0,
-              "Kdr": 3700,  # Using isotropic formula. Kdr = 2 * mu_s / d + lmbda_s
+              "Kdr": 4700,  # Using isotropic formula. Kdr = 2 * mu_s / d + lmbda_s
               "fe degree solid": 2,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
               "maxiter": 1000,
-              "output solutions": False,
+              "output solutions": True,
               # "output_name": "monolithic",
               "output name": "swelling",
               "betas": -0.5,
               "betaf": 0.,
               "betap": 1.,
-              "solver type": "gmres",  # cg, gmres, AAR
-              "solver rtol": 1e-10,
-              "solver atol": 1e-12,
+              "solver rtol": 1e-8,
+              "solver atol": 1e-10,
               "solver maxiter": 1000,
               "solver monitor": True,
+              "solver type": "gmres",  # cg, gmres, AAR
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
               "inner pc type": "lu",  # bjacobi, ilu, hypre, lu
               "inner accel order": 0,
