@@ -81,7 +81,6 @@ class PoromechanicsAssembler:
 
         # Then, preconditioner matrices (FS and DIFF)
         if self.prec_type == "undrained":
-            print("Using undrained preconditioner")
             N = self.ks / self.phis**2
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
@@ -100,7 +99,6 @@ class PoromechanicsAssembler:
                    + div(self.phis * self.idt * us) * q) * dx
             a_p_diff = 0*q*dx
         elif self.prec_type == "diagonal":
-            print("Using diagonal preconditioner", flush=True)
             beta_s_hat = self.betas
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
@@ -124,7 +122,6 @@ class PoromechanicsAssembler:
                    + div(self.phi0 * vf) * q) * dx
             a_p_diff = 0.0*q*dx
         elif prec_type == "diagonal 3-way":
-            print("Using diagonal 3-way preconditioner")
             beta_s_hat = self.betas
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
