@@ -121,7 +121,7 @@ class PoromechanicsAssembler:
                    + beta_p * p * q
                    + div(self.phi0 * vf) * q) * dx
             a_p_diff = 0.0*q*dx
-        elif prec_type == "diagonal 3-way":
+        elif self.prec_type == "diagonal 3-way":
             beta_s_hat = self.betas
 
             a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)

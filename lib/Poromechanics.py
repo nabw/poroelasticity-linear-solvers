@@ -27,14 +27,29 @@ class Poromechanics(AbstractPhysics):
         self.bcs = bcs
         self.bcs_diff = bcs_diff
 
+        # Create map for pressure dofs, used in 3way CC preconditioner
+        dofs_p = self.V.sub(2).dofmap().dofs()
+        bcs_sub_pressure = []
+        for b in bcs_diff:
+            bc_vals = b.get_boundary_values().keys()
+            for i, dof in enumerate(dofs_p):
+                if dof in bc_vals:
+                    bcs_sub_pressure.append(i)
+        self.bcs_sub_pressure = bcs_sub_pressure
+
     def create_solver(self, A, P, P_diff):
 
         # First create preconditioner
         from lib.Preconditioner import Preconditioner
         pc_type = self.parameters["pc type"]
+        inner_ksp_type = self.parameters["inner ksp type"]
         inner_pc_type = self.parameters["inner pc type"]
+        inner_rtol = self.parameters["inner rtol"]
+        inner_atol = self.parameters["inner atol"]
+        inner_maxiter = self.parameters["inner maxiter"]
         inner_accel_order = self.parameters["inner accel order"]
-        pc = Preconditioner(self.V, A, P, P_diff, pc_type, inner_pc_type, inner_accel_order)
+        pc = Preconditioner(self.V, A, P, P_diff, pc_type, inner_ksp_type, inner_pc_type,
+                            inner_rtol, inner_atol, inner_maxiter, inner_accel_order, self.bcs_sub_pressure)
         pc = pc.get_pc()
 
         # Then create linear solver
