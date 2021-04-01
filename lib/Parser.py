@@ -11,14 +11,15 @@ class Parser:
         parser = OptionParser(add_help_option=False)
         parser.add_option("-h", "--help", action="help")
         # Add real options
-        parser.add_option("-N", type="int", dest="N", help="Number of elements per side")
-        parser.add_option("-solver-type", type="str", dest="solver_type",
+        parser.add_option("-N", "--Nelements", type="int", dest="N",
+                          help="Number of elements per side")
+        parser.add_option("--solver-type", type="str", dest="solver_type",
                           help="Type of linear solver: gmres, cg, aar")
-        parser.add_option("-pc-type", type="str", dest="pc_type",
+        parser.add_option("--pc-type", type="str", dest="pc_type",
                           help="Type of splitting preconditioner: diagonal, undrained, diagonal 3-way")
-        parser.add_option("-fe-solid", type="int", dest="fe_s",
+        parser.add_option("--fe-solid", type="int", dest="fe_s",
                           help="Finite element degree of solid")
-        parser.add_option("-monitor", action="store_true", dest="monitor",
+        parser.add_option("--monitor", action="store_true", dest="monitor",
                           help="Monitor linear solver convergence")
         options, _ = parser.parse_args()
 

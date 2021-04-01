@@ -68,7 +68,6 @@ class AbstractPhysics:
 
         from time import time
         current_time = time()
-        self.pprint("Begining simulation")
         iterations = []
 
         if self.output_solutions:
