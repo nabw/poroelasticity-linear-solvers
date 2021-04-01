@@ -1,14 +1,15 @@
 from dolfin import *
 from lib.MeshCreation import generate_square
 from lib.Poromechanics import Poromechanics
+from lib.Parser import Parser
 from time import time
 import numpy as np
-import sys
+
 initial_time = time()
-if len(sys.argv) > 1:
-    Nelements = int(sys.argv[1])
-else:
-    Nelements = 10
+parser = Parser()
+Nelements = 10
+if parser.options.N:
+    Nelements = parser.options.N
 length = 64
 mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE = generate_square(
     Nelements, length)
@@ -111,7 +112,7 @@ parameters = {"mu_f": 1e-3,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
               "maxiter": 1000,
-              "output solutions": True,
+              "output solutions": False,
               # "output_name": "monolithic",
               "output name": "swelling",
               "betas": -0.5,
@@ -120,11 +121,11 @@ parameters = {"mu_f": 1e-3,
               "solver rtol": 1e-8,
               "solver atol": 1e-10,
               "solver maxiter": 1000,
-              "solver monitor": True,
+              "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "undrained",  # diagonal, undrained, diagonal 3-way
-              "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "asm",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner ksp type": "preonly",  # preonly, gmres, cg, bicgstab,
+              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
               "inner rtol": 1e-8,
               "inner atol": 1e-10,
               "inner maxiter": 1000,
@@ -141,7 +142,7 @@ parameters = {"mu_f": 1e-3,
               "fs_sur": fs_sur,
               "p_source": p_source}
 
-problem = Poromechanics(parameters, mesh)
+problem = Poromechanics(parameters, mesh, parser)
 
 # Set up BCs
 

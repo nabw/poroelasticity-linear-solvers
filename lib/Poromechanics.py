@@ -4,8 +4,8 @@ from fenics import *
 
 
 class Poromechanics(AbstractPhysics):
-    def __init__(self, parameters, mesh):
-        super().__init__(parameters, mesh)
+    def __init__(self, parameters, mesh, parser):
+        super().__init__(parameters, mesh, parser)
         V = FunctionSpace(mesh,
                           MixedElement(VectorElement('CG', mesh.ufl_cell(), parameters["fe degree solid"]),
                                        VectorElement('CG', mesh.ufl_cell(),
@@ -101,3 +101,4 @@ class Poromechanics(AbstractPhysics):
         assign(self.us_nm1, us)
         assign(self.uf_nm1, uf)
         assign(self.p_nm1, p)
+        return solver.getIterationNumber()

@@ -1,14 +1,14 @@
 from dolfin import *
 from lib.MeshCreation import generate_square
 from lib.Poromechanics import Poromechanics
+from lib.Parser import Parser
 from time import time
-import sys
 
 initial_time = time()
-if len(sys.argv) > 1:
-    Nelements = int(sys.argv[1])
-else:
-    Nelements = 10
+parser = Parser()
+Nelements = 10
+if parser.options.N:
+    Nelements = parser.options.N
 side_length = 1e-2
 mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE = generate_square(
     Nelements, side_length)
@@ -57,7 +57,7 @@ parameters = {"mu_f": 0.035,
               "solver rtol": 1e-8,
               "solver atol": 1e-10,
               "solver maxiter": 1000,
-              "solver monitor": True,
+              "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
               "inner ksp type": "preonly",  # preonly, gmres, cg, bicgstab,
@@ -78,7 +78,7 @@ parameters = {"mu_f": 0.035,
               "fs_sur": fs_sur,
               "p_source": p_source}
 
-problem = Poromechanics(parameters, mesh)
+problem = Poromechanics(parameters, mesh, parser)
 
 # Set up BCs
 

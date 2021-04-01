@@ -7,11 +7,12 @@ class AbstractPhysics:
     Abstract class in charge of solving a time-dependent physics problem.
     """
 
-    def __init__(self, parameters, mesh):
+    def __init__(self, parameters, mesh, parser):
         """
         Constructor
         """
         self.parameters = parameters
+        self.parameters.update(parser.options_dict)
         self.mesh = mesh
         self.dim = mesh.topology().dim()
 
@@ -76,8 +77,9 @@ class AbstractPhysics:
         while self.t < self.tf:
 
             self.t += self.dt
-            self.solve_time_step(self.t)
-            self.pprint("-- Solved time t={:.4f} in {:.3f}s".format(self.t, time() - current_time))
+            its = self.solve_time_step(self.t)
+            self.pprint(
+                "-- Solved time t={:.4f}. {} iterations in {:.3f}s".format(self.t, its, time() - current_time))
             if self.output_solutions:
                 self.export(self.t)
             current_time = time()

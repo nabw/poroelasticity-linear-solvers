@@ -55,7 +55,7 @@ def generate_rectangle(x0, y0, x1, y1, nx, ny):
     """
     from dolfin import RectangleMesh, Point, SubDomain, MeshFunction, Measure, near
     mesh = RectangleMesh(Point(x0, y0), Point(x1, y1), nx, ny)
-    
+
     # Subdomains: Solid
     class Left(SubDomain):
         def inside(self, x, on_boundary):
@@ -87,12 +87,10 @@ def generate_rectangle(x0, y0, x1, y1, nx, ny):
     return mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE
 
 
-
-
 def prolateGeometry(filename):
-    
+
     from dolfin import XDMFFile, Mesh, MeshValueCollection, MeshTransformation
-    xdmf_meshfile    = "meshes/" + filename + ".xdmf"
+    xdmf_meshfile = "meshes/" + filename + ".xdmf"
     xdmf_meshfile_bm = "meshes/" + filename + "_bm.xdmf"
     mesh = Mesh()
     with XDMFFile(xdmf_meshfile) as infile:
@@ -102,12 +100,12 @@ def prolateGeometry(filename):
         infile.read(mvc, "name_to_read")
     from dolfin import cpp
     markers = cpp.mesh.MeshFunctionSizet(mesh, mvc)
-    
+
     ENDOCARD = 20
-    EPICARD  = 10
-    BASE     = 50
-    NONE     = 99
-    
+    EPICARD = 10
+    BASE = 50
+    NONE = 99
+
     MeshTransformation.scale(mesh, 1e-3)
     return mesh, markers, ENDOCARD, EPICARD, BASE, NONE
 
