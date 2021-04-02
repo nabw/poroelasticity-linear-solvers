@@ -12,7 +12,7 @@ class Poromechanics(AbstractPhysics):
                                                      parameters["fe degree fluid"]),
                                        FiniteElement('CG', mesh.ufl_cell(), parameters["fe degree pressure"])))
         self.V = V
-        self.pprint("\n\n------ Solving problem with {} dofs".format(V.dim()))
+        self.pprint("---- Problem dofs={}".format(V.dim()))
         self.assembler = PoromechanicsAssembler(parameters, V)
         # Start by assembling system matrices
         self.assembler.assemble()

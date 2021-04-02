@@ -86,10 +86,12 @@ class PreconditionerCC(object):
 
     def setup_solver(self, solver, mat):
         solver.setOperators(mat, mat)
-        solver.setTolerances(self.inner_rtol, self.inner_atol, 1e20, self.inner_maxiter)
         solver.setType(self.inner_ksp_type)
         pc = solver.getPC()
         pc.setType(self.inner_pc_type)
+
+        if self.inner_ksp_type != "preonly":
+            solver.setTolerances(self.inner_rtol, self.inner_atol, 1e20, self.inner_maxiter)
 
         if self.inner_pc_type == "lu":
             factor_method = "mumps"  # Better scaling than the others

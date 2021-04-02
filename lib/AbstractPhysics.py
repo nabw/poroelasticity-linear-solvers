@@ -78,7 +78,7 @@ class AbstractPhysics:
             self.t += self.dt
             its = self.solve_time_step(self.t)
             self.pprint(
-                "-- Solved time t={:.4f}. {} iterations in {:.3f}s".format(self.t, its, time() - current_time))
+                "-------- Solved time t={:.2f}. {} iterations in {:.2f}s".format(self.t, its, time() - current_time))
             if self.output_solutions:
                 self.export(self.t)
             current_time = time()

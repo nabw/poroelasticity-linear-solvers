@@ -21,6 +21,9 @@ class Parser:
                           help="Finite element degree of solid")
         parser.add_option("--monitor", action="store_true", dest="monitor",
                           help="Monitor linear solver convergence")
+        parser.add_option("--inner-accel-order", type="int", dest="inner_accel_order",
+                          help="Order of inner Anderson acceleration")
+
         options, _ = parser.parse_args()
 
         options_dict = {}  # Empty dictionary
@@ -34,5 +37,7 @@ class Parser:
             options_dict["fe degree solid"] = options.fe_s
         if options.monitor:
             options_dict["solver monitor"] = True
+        if options.inner_accel_order:
+            options_dict["inner accel order"] = options.inner_accel_order
         self.options_dict = options_dict
         self.options = options
