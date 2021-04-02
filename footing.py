@@ -119,7 +119,7 @@ parameters = {"mu_f": 1e-3,
               "betaf": 0.,
               "betap": 1.,
               "solver rtol": 1e-10,
-              "solver atol": 1e-12,
+              "solver atol": 1e-10,
               "solver maxiter": 500,
               "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
