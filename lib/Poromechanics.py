@@ -49,8 +49,10 @@ class Poromechanics(AbstractPhysics):
         inner_atol = self.parameters["inner atol"]
         inner_maxiter = self.parameters["inner maxiter"]
         inner_accel_order = self.parameters["inner accel order"]
+        inner_monitor = self.parameters["inner monitor"]
         pc = Preconditioner(self.V, A, P, P_diff, pc_type, inner_ksp_type, inner_pc_type,
-                            inner_rtol, inner_atol, inner_maxiter, inner_accel_order, self.bcs_sub_pressure)
+                            inner_rtol, inner_atol, inner_maxiter, inner_accel_order,
+                            inner_monitor, self.bcs_sub_pressure)
         pc = pc.get_pc()
 
         # Then create linear solver

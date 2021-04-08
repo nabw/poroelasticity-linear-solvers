@@ -4,7 +4,7 @@ from lib.AndersonAcceleration import AndersonAcceleration
 
 class PreconditionerCC(object):
 
-    def __init__(self, M, M_diff, V, flag_3_way, inner_ksp_type="gmres", inner_pc_type="lu", inner_rtol=1e-6, inner_atol=1e-6, inner_maxiter=1000, w1=1.0, w2=0.1, accel_order=0, bcs_sub_pressure=None):
+    def __init__(self, M, M_diff, V, flag_3_way, inner_ksp_type="gmres", inner_pc_type="lu", inner_rtol=1e-6, inner_atol=1e-6, inner_maxiter=1000, inner_monitor=True, w1=1.0, w2=0.1, accel_order=0, bcs_sub_pressure=None):
         import numpy as np
         self.M = M
         self.M_diff = M_diff
@@ -29,6 +29,7 @@ class PreconditionerCC(object):
         self.inner_maxiter = inner_maxiter
         self.inner_rtol = inner_rtol
         self.inner_atol = inner_atol
+        self.inner_monitor = inner_monitor
         self.anderson = AndersonAcceleration(accel_order)
 
         # Used to set pressure bcs on rhs during 3-way
@@ -186,7 +187,7 @@ class PreconditionerCC(object):
 
 
 class Preconditioner:
-    def __init__(self, V, A, P, P_diff, pc_type, inner_ksp_type, inner_pc_type, inner_rtol, inner_atol, inner_maxiter, inner_accel_order, bcs_sub_pressure):
+    def __init__(self, V, A, P, P_diff, pc_type, inner_ksp_type, inner_pc_type, inner_rtol, inner_atol, inner_maxiter, inner_accel_order, inner_monitor, bcs_sub_pressure):
         self.V = V
         self.A = A
         self.P = P
@@ -198,6 +199,7 @@ class Preconditioner:
         self.inner_rtol = inner_rtol
         self.inner_atol = inner_atol
         self.inner_accel_order = inner_accel_order
+        self.inner_monitor = inner_monitor
         self.bcs_sub_pressure = bcs_sub_pressure
         if pc_type not in ("undrained", "diagonal", "diagonal 3-way"):
             import sys
@@ -206,7 +208,7 @@ class Preconditioner:
     def get_pc(self):
         flag_3_way = self.pc_type == "diagonal 3-way"
         ctx = PreconditionerCC(self.P.mat(), self.P_diff.mat(), self.V, flag_3_way, self.inner_ksp_type,
-                               self.inner_pc_type, self.inner_rtol, self.inner_atol, self.inner_maxiter, 1.0, 0.1, self.inner_accel_order, self.bcs_sub_pressure)
+                               self.inner_pc_type, self.inner_rtol, self.inner_atol, self.inner_maxiter, self.inner_monitor, 1.0, 0.1, self.inner_accel_order, self.bcs_sub_pressure)
         pc = PETSc.PC().create()
         pc.setType('python')
         pc.setPythonContext(ctx)

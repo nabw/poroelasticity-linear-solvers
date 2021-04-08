@@ -5,6 +5,7 @@ Created on Fri Feb 22 14:06:24 2019
 
 @author: barnafi
 """
+NONE = 99  # Marker for empty boundary
 
 
 def generate_square(Nelements, length):
@@ -108,6 +109,54 @@ def prolateGeometry(filename):
 
     MeshTransformation.scale(mesh, 1e-3)
     return mesh, markers, ENDOCARD, EPICARD, BASE, NONE
+
+
+def generate_cube(Nelements, length):
+    """
+    Creates a square mesh of given elements and length with markers on
+    the sides: left, bottom, right and top
+    """
+    from dolfin import UnitCubeMesh, SubDomain, MeshFunction, Measure, near
+    mesh = UnitCubeMesh(Nelements, Nelements, Nelements)
+    # Rescale for Chapelle-Moireau comparison
+    mesh.coordinates()[:] *= length
+
+    # Subdomains: Solid
+    class Xp(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[0], length) and on_boundary
+
+    class Xm(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[0], 0.0) and on_boundary
+
+    class Yp(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[1], length) and on_boundary
+
+    class Ym(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[1], 0.0) and on_boundary
+
+    class Zp(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[2], length) and on_boundary
+
+    class Zm(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[2], 0.0) and on_boundary
+    xp, xm, yp, ym, zp, zm = Xp(), Xm(), Yp(), Ym(), Zp(), Zm()
+    XP, XM, YP, YM, ZP, ZM = 1, 2, 3, 4, 5, 6  # Set numbering
+
+    markers = MeshFunction("size_t", mesh, 2)
+    markers.set_all(0)
+
+    boundaries = (xp, xm, yp, ym, zp, zm)
+    def_names = (XP, XM, YP, YM, ZP, ZM)
+    for side, num in zip(boundaries, def_names):
+        side.mark(markers, num)
+
+    return mesh, markers, XP, XM, YP, YM, ZP, ZM
 
 
 def generateBoundaryMeasure(mesh, markers, tags_list, none_tag=99):
