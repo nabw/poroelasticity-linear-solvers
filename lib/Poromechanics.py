@@ -47,39 +47,6 @@ class Poromechanics(AbstractPhysics):
         pc = Preconditioner(self.V, A, P, P_diff, parameters, self.bcs_sub_pressure)
         pc = pc.get_pc()
 
-<<<<<<< HEAD
-        # Then create linear solver
-        solver_type = self.parameters["solver type"]
-        atol = self.parameters["solver atol"]
-        rtol = self.parameters["solver rtol"]
-        maxiter = self.parameters["solver maxiter"]
-        monitor_convergence = self.parameters["solver monitor"]
-        if solver_type == "aar":
-            from lib.AAR import AAR
-            order = self.parameters["AAR order"]
-            p = self.parameters["AAR p"]
-            omega = self.parameters["AAR omega"]
-            beta = self.parameters["AAR beta"]
-            return AAR(order, p, omega, beta, A.mat(), x0=None, pc=pc,
-                       atol=atol, rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
-        else:
-            from petsc4py import PETSc
-            solver = PETSc.KSP().create()
-            solver.setOperators(A.mat())
-            solver.setType(solver_type)
-            solver.setTolerances(rtol, atol, 1e20, maxiter)
-            if pc_type == "lu":
-                pc = solver.getPC()
-                pc.setType("lu")
-            else:
-                solver.setPC(pc)
-            if solver_type == "gmres":
-                solver.setGMRESRestart(maxiter)
-            if monitor_convergence:
-                PETSc.Options().setValue("-ksp_monitor", None)
-            solver.setFromOptions()
-            return solver
-=======
         solver = Solver(A, pc, parameters, self.index_map)
         return solver.get_solver()
         # # Then create linear solver
@@ -110,7 +77,6 @@ class Poromechanics(AbstractPhysics):
         #
         #     solver.setFromOptions()
         #     return solver
->>>>>>> 286531e2c2a2373741451df5bf6f64659dee609f
 
     def solve_time_step(self, t):
         A = self.assembler.getMatrix()
