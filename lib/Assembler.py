@@ -77,6 +77,8 @@ class PoromechanicsAssembler:
                + div(self.phi0 * vf) * q
                + div(self.phis * self.idt * us) * q) * dx
 
+        a_p_diff = Constant(0.0) * p * q * dx
+
         assemble(a_s + a_f + a_p, tensor=self.A)
 
         # Then, preconditioner matrices (FS and DIFF)
@@ -149,6 +151,10 @@ class PoromechanicsAssembler:
             a_p_diff = (self.phis**2 * self.idt / self.ks * p * q
                         + beta_p * p * q
                         + dot(beta_CC2 * grad(p), grad(q))) * dx
+        else:
+            a_s = a_s
+            a_f = a_f
+            a_p = a_p
         assemble(a_s + a_f + a_p, tensor=self.P)
         assemble(a_s + a_f + a_p_diff, tensor=self.P_diff)
 
@@ -174,6 +180,7 @@ class PoromechanicsAssembler:
         # Compute solid residual
         rhs_s_n = dot(self.fs_sur(t), v) * self.dsNs + self.phis * \
             self.rhos * dot(self.fs_vol(t), v) * dx
+        print("DEBUG", self.fs_sur(t)(32, 64))
         lhs_s_n = dot(self.rhos * self.idt**2 * self.phis * (-2. * us_nm1 + us_nm2), v) * \
             dx - self.phi0**2 * dot(self.ikf * (- self.idt * (- us_nm1)), w) * dx
         r_s = rhs_s_n - lhs_s_n

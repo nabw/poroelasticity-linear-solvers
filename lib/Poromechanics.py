@@ -75,7 +75,11 @@ class Poromechanics(AbstractPhysics):
             solver.setOperators(A.mat())
             solver.setType(solver_type)
             solver.setTolerances(rtol, atol, 1e20, maxiter)
-            solver.setPC(pc)
+            if pc_type == "lu":
+                pc = solver.getPC()
+                pc.setType("lu")
+            else:
+                solver.setPC(pc)
             if solver_type == "gmres":
                 solver.setGMRESRestart(maxiter)
             if monitor_convergence:
@@ -98,8 +102,8 @@ class Poromechanics(AbstractPhysics):
 
         self.sol.vector().apply("")
         # Update solution
-        assign(self.us_nm2, self.us_nm1)
         us, uf, p = self.sol.split(True)
+        assign(self.us_nm2, self.us_nm1)
         assign(self.us_nm1, us)
         assign(self.uf_nm1, uf)
         assign(self.p_nm1, p)

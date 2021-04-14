@@ -201,9 +201,9 @@ class Preconditioner:
         self.inner_accel_order = inner_accel_order
         self.inner_monitor = inner_monitor
         self.bcs_sub_pressure = bcs_sub_pressure
-        if pc_type not in ("undrained", "diagonal", "diagonal 3-way"):
+        if pc_type not in ("undrained", "diagonal", "diagonal 3-way", "lu"):
             import sys
-            sys.exit("pc type must be one of undrained, diagonal, diagonal 3-way.")
+            sys.exit("pc type must be one of lu, undrained, diagonal, diagonal 3-way.")
 
     def get_pc(self):
         flag_3_way = self.pc_type == "diagonal 3-way"
