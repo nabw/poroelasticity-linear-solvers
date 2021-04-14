@@ -38,6 +38,9 @@ class PoromechanicsAssembler:
         self.ks = Constant(parameters["ks"])
         self.kf = Constant(parameters["kf"])
         self.dt = Constant(parameters["dt"])
+        self.adimensionalization_factor_s = self.dt**2/self.rhos
+        self.adimensionalization_factor_f = self.dt/self.rhof
+        self.adimensionalization_factor_p = self.dt * self.ks
 
         # Aux params
         self.phis = 1 - self.phi0
@@ -202,5 +205,7 @@ class PoromechanicsAssembler:
         lhs_p_n = (M_p + D_sf) * dx
         r_p = rhs_p_n - lhs_p_n
 
-        assemble(rhs_s_n + rhs_f_n + rhs_p_n, tensor=self.b)
+        # assemble(rhs_s_n + rhs_f_n + rhs_p_n, tensor=self.b)
+        assemble(self.adimensionalization_factor_s * rhs_s_n + self.adimensionalization_factor_f *
+                 rhs_f_n + self.adimensionalization_factor_p * rhs_p_n, tensor=self.b)
         return self.b
