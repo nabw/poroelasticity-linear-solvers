@@ -56,7 +56,7 @@ parameters = {"mu_f": 0.035,
               "betap": 1.,
               "solver rtol": 1e-10,
               "solver atol": 1e-10,
-              "solver maxiter": 500,
+              "solver maxiter": 200,
               "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way

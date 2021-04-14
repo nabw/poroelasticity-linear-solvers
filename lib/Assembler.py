@@ -183,7 +183,6 @@ class PoromechanicsAssembler:
         # Compute solid residual
         rhs_s_n = dot(self.fs_sur(t), v) * self.dsNs + self.phis * \
             self.rhos * dot(self.fs_vol(t), v) * dx
-        print("DEBUG", self.fs_sur(t)(32, 64))
         lhs_s_n = dot(self.rhos * self.idt**2 * self.phis * (-2. * us_nm1 + us_nm2), v) * \
             dx - self.phi0**2 * dot(self.ikf * (- self.idt * (- us_nm1)), w) * dx
         r_s = rhs_s_n - lhs_s_n

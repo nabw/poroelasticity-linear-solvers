@@ -1,7 +1,7 @@
 from petsc4py import PETSc
 
 
-class IndexMap:
+class IndexSet:
     def __init__(self, V):
         # Keep sub dimensions
         self.ns = V.sub(0).dim()

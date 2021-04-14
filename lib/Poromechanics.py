@@ -1,25 +1,26 @@
 from lib.AbstractPhysics import AbstractPhysics
 from lib.Assembler import PoromechanicsAssembler
-from lib.IndexMap import IndexMap
-from fenics import *
+from lib.IndexSet import IndexSet
+from lib.Solver import Solver
+import dolfin as df
 
 
 class Poromechanics(AbstractPhysics):
     def __init__(self, parameters, mesh, parser):
         super().__init__(parameters, mesh, parser)
-        V = FunctionSpace(mesh,
-                          MixedElement(VectorElement('CG', mesh.ufl_cell(), parameters["fe degree solid"]),
-                                       VectorElement('CG', mesh.ufl_cell(),
-                                                     parameters["fe degree fluid"]),
-                                       FiniteElement('CG', mesh.ufl_cell(), parameters["fe degree pressure"])))
+        V = df.FunctionSpace(mesh,
+                             df.MixedElement(df.VectorElement('CG', mesh.ufl_cell(), parameters["fe degree solid"]),
+                                             df.VectorElement('CG', mesh.ufl_cell(),
+                                                              parameters["fe degree fluid"]),
+                                             df.FiniteElement('CG', mesh.ufl_cell(), parameters["fe degree pressure"])))
         self.V = V
-        self.index_map = IndexMap(V)
+        self.index_map = IndexSet(V)
         self.pprint("---- Problem dofs={}".format(V.dim()))
         self.assembler = PoromechanicsAssembler(parameters, V)
         # Start by assembling system matrices
         self.assembler.assemble()
 
-        self.sol = Function(V)
+        self.sol = df.Function(V)
         self.us_nm1, self.uf_nm1, self.p_nm1 = self.sol.split(True)
         self.us_nm2 = self.us_nm1.copy(True)
 
@@ -44,10 +45,10 @@ class Poromechanics(AbstractPhysics):
 
         # First create preconditioner
         from lib.Preconditioner import Preconditioner
-        pc = Preconditioner(self.V, A, P, P_diff, parameters, self.bcs_sub_pressure)
+        pc = Preconditioner(self.index_map, A, P, P_diff, self.parameters, self.bcs_sub_pressure)
         pc = pc.get_pc()
 
-        solver = Solver(A, pc, parameters, self.index_map)
+        solver = Solver(A, b, pc, self.parameters, self.index_map)
         return solver.get_solver()
         # # Then create linear solver
         # solver_type = self.parameters["solver type"]
@@ -94,8 +95,8 @@ class Poromechanics(AbstractPhysics):
         self.sol.vector().apply("")
         # Update solution
         us, uf, p = self.sol.split(True)
-        assign(self.us_nm2, self.us_nm1)
-        assign(self.us_nm1, us)
-        assign(self.uf_nm1, uf)
-        assign(self.p_nm1, p)
+        df.assign(self.us_nm2, self.us_nm1)
+        df.assign(self.us_nm1, us)
+        df.assign(self.uf_nm1, uf)
+        df.assign(self.p_nm1, p)
         return solver.getIterationNumber()
