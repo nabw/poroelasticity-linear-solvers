@@ -4,25 +4,17 @@ from lib.AndersonAcceleration import AndersonAcceleration
 
 class PreconditionerCC(object):
 
-    def __init__(self, M, M_diff, V, flag_3_way, inner_ksp_type="gmres", inner_pc_type="lu", inner_rtol=1e-6, inner_atol=1e-6, inner_maxiter=1000, inner_monitor=True, w1=1.0, w2=0.1, accel_order=0, bcs_sub_pressure=None):
+    def __init__(self, M, M_diff, index_map, flag_3_way, inner_ksp_type="gmres", inner_pc_type="lu", inner_rtol=1e-6, inner_atol=1e-6, inner_maxiter=1000, inner_monitor=True, w1=1.0, w2=0.1, accel_order=0, bcs_sub_pressure=None):
         import numpy as np
         self.M = M
         self.M_diff = M_diff
         self.flag_3_way = flag_3_way
         self.w1 = w1
         self.w2 = w2
-        self.ns = V.sub(0).dim()
-        self.nf = V.sub(1).dim()
-        self.np = V.sub(2).dim()
-        self.dofmap_s = V.sub(0).dofmap().dofs()
-        self.dofmap_f = V.sub(1).dofmap().dofs()
-        self.dofmap_p = V.sub(2).dofmap().dofs()
-        self.dofmap_fp = sorted(self.dofmap_f + self.dofmap_p)
+        self.ns, self.nf, self.np = index_map.get_dimensions()
+
         # Create index sets for each physics
-        self.is_s = PETSc.IS().createGeneral(self.dofmap_s)
-        self.is_f = PETSc.IS().createGeneral(self.dofmap_f)
-        self.is_p = PETSc.IS().createGeneral(self.dofmap_p)
-        self.is_fp = PETSc.IS().createGeneral(self.dofmap_fp)
+        self.is_s, self.is_f, self.is_p, self.is_fp = index_map.get_index_sets()
 
         self.inner_ksp_type = inner_ksp_type
         self.inner_pc_type = inner_pc_type
@@ -38,17 +30,22 @@ class PreconditionerCC(object):
 
     def allocate_temp_vectors(self):
         self.temp_sx = PETSc.Vec().create()
+        self.temp2_sx = PETSc.Vec().create()
         self.temp_sy = PETSc.Vec().create()
         self.temp_fx = PETSc.Vec().create()
+        self.temp2_fx = PETSc.Vec().create()
         self.temp_fy = PETSc.Vec().create()
         self.temp_px = PETSc.Vec().create()
         self.temp_py = PETSc.Vec().create()
         self.temp_fpx = PETSc.Vec().create()
+        self.temp2_fpx = PETSc.Vec().create()
         self.temp_fpy = PETSc.Vec().create()
         # Counter parts for CC solver
         self.temp_s_diffx = PETSc.Vec().create()
+        self.temp2_s_diffx = PETSc.Vec().create()
         self.temp_s_diffy = PETSc.Vec().create()
         self.temp_f_diffx = PETSc.Vec().create()
+        self.temp2_f_diffx = PETSc.Vec().create()
         self.temp_f_diffy = PETSc.Vec().create()
         self.temp_p_diffx = PETSc.Vec().create()
         self.temp_p_diffy = PETSc.Vec().create()
@@ -78,13 +75,6 @@ class PreconditionerCC(object):
         self.ksp_p_diff = PETSc.KSP().create()
         self.ksps = (self.ksp_s, self.ksp_f, self.ksp_p, self.ksp_fp, self.ksp_p_diff)
 
-        # self.pc_s = self.ksp_s.getPC()
-        # self.pc_f = self.ksp_f.getPC()
-        # self.pc_p = self.ksp_p.getPC()
-        # self.pc_fp = self.ksp_fp.getPC()
-        # self.pc_p_diff = self.ksp_p_diff.getPC()
-        # self.pcs = (self.pc_s, self.pc_f, self.pc_p, self.pc_fp, self.pc_p_diff)
-
     def setup_solver(self, solver, mat):
         solver.setOperators(mat, mat)
         solver.setType(self.inner_ksp_type)
@@ -99,11 +89,11 @@ class PreconditionerCC(object):
             pc.setFactorSolverType(factor_method)
 
         if self.inner_pc_type == "hypre":
-            hypre_type = "parasails"  # only parasails wokrs
+            hypre_type = "boomeramg"  # in 2D only parasails works
             pc.setHYPREType(hypre_type)
 
-        if self.inner_pc_type == "gamg":
-            pc.setGAMGSmooths(2)
+        # if self.inner_pc_type == "gamg":
+            # pc.setGAMGSmooths(2)
 
     def setUp(self, pc):
         # create local ksp and pc contexts
@@ -187,19 +177,19 @@ class PreconditionerCC(object):
 
 
 class Preconditioner:
-    def __init__(self, V, A, P, P_diff, pc_type, inner_ksp_type, inner_pc_type, inner_rtol, inner_atol, inner_maxiter, inner_accel_order, inner_monitor, bcs_sub_pressure):
-        self.V = V
+    def __init__(self, index_map, A, P, P_diff, parameters, bcs_sub_pressure):
+        self.index_map = index_map
         self.A = A
         self.P = P
         self.P_diff = P_diff
-        self.pc_type = pc_type
-        self.inner_ksp_type = inner_ksp_type
-        self.inner_pc_type = inner_pc_type
-        self.inner_maxiter = inner_maxiter
-        self.inner_rtol = inner_rtol
-        self.inner_atol = inner_atol
-        self.inner_accel_order = inner_accel_order
-        self.inner_monitor = inner_monitor
+        self.pc_type = parameters["pc type"]
+        self.inner_ksp_type = parameters["inner ksp type"]
+        self.inner_pc_type = parameters["inner pc type"]
+        self.inner_rtol = parameters["inner rtol"]
+        self.inner_atol = parameters["inner atol"]
+        self.inner_maxiter = parameters["inner maxiter"]
+        self.inner_accel_order = parameters["inner accel order"]
+        self.inner_monitor = parameters["inner monitor"]
         self.bcs_sub_pressure = bcs_sub_pressure
         if pc_type not in ("undrained", "diagonal", "diagonal 3-way"):
             import sys
@@ -207,7 +197,7 @@ class Preconditioner:
 
     def get_pc(self):
         flag_3_way = self.pc_type == "diagonal 3-way"
-        ctx = PreconditionerCC(self.P.mat(), self.P_diff.mat(), self.V, flag_3_way, self.inner_ksp_type,
+        ctx = PreconditionerCC(self.P.mat(), self.P_diff.mat(), self.index_map, flag_3_way, self.inner_ksp_type,
                                self.inner_pc_type, self.inner_rtol, self.inner_atol, self.inner_maxiter, self.inner_monitor, 1.0, 0.1, self.inner_accel_order, self.bcs_sub_pressure)
         pc = PETSc.PC().create()
         pc.setType('python')

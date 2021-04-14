@@ -1,5 +1,6 @@
 from lib.AbstractPhysics import AbstractPhysics
 from lib.Assembler import PoromechanicsAssembler
+from lib.IndexMap import IndexMap
 from fenics import *
 
 
@@ -12,6 +13,7 @@ class Poromechanics(AbstractPhysics):
                                                      parameters["fe degree fluid"]),
                                        FiniteElement('CG', mesh.ufl_cell(), parameters["fe degree pressure"])))
         self.V = V
+        self.index_map = IndexMap(V)
         self.pprint("---- Problem dofs={}".format(V.dim()))
         self.assembler = PoromechanicsAssembler(parameters, V)
         # Start by assembling system matrices
@@ -38,50 +40,43 @@ class Poromechanics(AbstractPhysics):
                     bcs_sub_pressure.append(i)
         self.bcs_sub_pressure = bcs_sub_pressure
 
-    def create_solver(self, A, P, P_diff):
+    def create_solver(self, A, P, P_diff, b):
 
         # First create preconditioner
         from lib.Preconditioner import Preconditioner
-        pc_type = self.parameters["pc type"]
-        inner_ksp_type = self.parameters["inner ksp type"]
-        inner_pc_type = self.parameters["inner pc type"]
-        inner_rtol = self.parameters["inner rtol"]
-        inner_atol = self.parameters["inner atol"]
-        inner_maxiter = self.parameters["inner maxiter"]
-        inner_accel_order = self.parameters["inner accel order"]
-        inner_monitor = self.parameters["inner monitor"]
-        pc = Preconditioner(self.V, A, P, P_diff, pc_type, inner_ksp_type, inner_pc_type,
-                            inner_rtol, inner_atol, inner_maxiter, inner_accel_order,
-                            inner_monitor, self.bcs_sub_pressure)
+        pc = Preconditioner(self.V, A, P, P_diff, parameters, self.bcs_sub_pressure)
         pc = pc.get_pc()
 
-        # Then create linear solver
-        solver_type = self.parameters["solver type"]
-        atol = self.parameters["solver atol"]
-        rtol = self.parameters["solver rtol"]
-        maxiter = self.parameters["solver maxiter"]
-        monitor_convergence = self.parameters["solver monitor"]
-        if solver_type == "aar":
-            from lib.AAR import AAR
-            order = self.parameters["AAR order"]
-            p = self.parameters["AAR p"]
-            omega = self.parameters["AAR omega"]
-            beta = self.parameters["AAR beta"]
-            return AAR(order, p, omega, beta, A.mat(), x0=None, pc=pc,
-                       atol=atol, rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
-        else:
-            from petsc4py import PETSc
-            solver = PETSc.KSP().create()
-            solver.setOperators(A.mat())
-            solver.setType(solver_type)
-            solver.setTolerances(rtol, atol, 1e20, maxiter)
-            solver.setPC(pc)
-            if solver_type == "gmres":
-                solver.setGMRESRestart(maxiter)
-            if monitor_convergence:
-                PETSc.Options().setValue("-ksp_monitor", None)
-            solver.setFromOptions()
-            return solver
+        solver = Solver(A, pc, parameters, self.index_map)
+        return solver.get_solver()
+        # # Then create linear solver
+        # solver_type = self.parameters["solver type"]
+        # atol = self.parameters["solver atol"]
+        # rtol = self.parameters["solver rtol"]
+        # maxiter = self.parameters["solver maxiter"]
+        # monitor_convergence = self.parameters["solver monitor"]
+        # if solver_type == "aar":
+        #     from lib.AAR import AAR
+        #     order = self.parameters["AAR order"]
+        #     p = self.parameters["AAR p"]
+        #     omega = self.parameters["AAR omega"]
+        #     beta = self.parameters["AAR beta"]
+        #     return AAR(order, p, omega, beta, A.mat(), x0=None, pc=pc,
+        #                atol=atol, rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
+        # else:
+        #     from petsc4py import PETSc
+        #     solver = PETSc.KSP().create()
+        #     solver.setOperators(A.mat())
+        #     solver.setType(solver_type)
+        #     solver.setTolerances(rtol, atol, 1e20, maxiter)
+        #     solver.setPC(pc)
+        #     if solver_type == "gmres":
+        #         solver.setGMRESRestart(maxiter)
+        #     if monitor_convergence:
+        #         PETSc.Options().setValue("-ksp_monitor", None)
+        #
+        #     solver.setFromOptions()
+        #     return solver
 
     def solve_time_step(self, t):
         A = self.assembler.getMatrix()
@@ -93,7 +88,7 @@ class Poromechanics(AbstractPhysics):
                 bc.apply(obj)
         for bc in self.bcs_diff:
             bc.apply(P_diff)
-        solver = self.create_solver(A, P, P_diff)
+        solver = self.create_solver(A, P, P_diff, b)
         solver.solve(b.vec(), self.sol.vector().vec())
 
         self.sol.vector().apply("")

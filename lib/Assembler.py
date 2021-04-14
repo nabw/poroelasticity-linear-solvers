@@ -38,6 +38,9 @@ class PoromechanicsAssembler:
         self.ks = Constant(parameters["ks"])
         self.kf = Constant(parameters["kf"])
         self.dt = Constant(parameters["dt"])
+        self.adimensionalization_factor_s = self.dt**2/self.rhos
+        self.adimensionalization_factor_f = self.dt/self.rhof
+        self.adimensionalization_factor_p = self.dt * self.ks
 
         # Aux params
         self.phis = 1 - self.phi0
@@ -77,7 +80,9 @@ class PoromechanicsAssembler:
                + div(self.phi0 * vf) * q
                + div(self.phis * self.idt * us) * q) * dx
 
-        assemble(a_s + a_f + a_p, tensor=self.A)
+        # assemble(a_s + a_f + a_p, tensor=self.A)
+        assemble(self.adimensionalization_factor_s * a_s + self.adimensionalization_factor_f *
+                 a_f + self.adimensionalization_factor_p * a_p, tensor=self.A)
 
         # Then, preconditioner matrices (FS and DIFF)
         if self.prec_type == "undrained":
@@ -149,8 +154,12 @@ class PoromechanicsAssembler:
             a_p_diff = (self.phis**2 * self.idt / self.ks * p * q
                         + beta_p * p * q
                         + dot(beta_CC2 * grad(p), grad(q))) * dx
-        assemble(a_s + a_f + a_p, tensor=self.P)
-        assemble(a_s + a_f + a_p_diff, tensor=self.P_diff)
+        # assemble(a_s + a_f + a_p, tensor=self.P)
+        # assemble(a_s + a_f + a_p_diff, tensor=self.P_diff)
+        assemble(self.adimensionalization_factor_s * a_s + self.adimensionalization_factor_f *
+                 a_f + self.adimensionalization_factor_p * a_p, tensor=self.P)
+        assemble(self.adimensionalization_factor_s * a_s + self.adimensionalization_factor_f *
+                 a_f + self.adimensionalization_factor_p * a_p_diff, tensor=self.P_diff)
 
     def getMatrix(self):
         """
@@ -195,5 +204,7 @@ class PoromechanicsAssembler:
         lhs_p_n = (M_p + D_sf) * dx
         r_p = rhs_p_n - lhs_p_n
 
-        assemble(rhs_s_n + rhs_f_n + rhs_p_n, tensor=self.b)
+        # assemble(rhs_s_n + rhs_f_n + rhs_p_n, tensor=self.b)
+        assemble(self.adimensionalization_factor_s * rhs_s_n + self.adimensionalization_factor_f *
+                 rhs_f_n + self.adimensionalization_factor_p * rhs_p_n, tensor=self.b)
         return self.b
