@@ -1,4 +1,6 @@
 from dolfin import *
+from mpi4py import MPI
+from time import perf_counter as time
 
 
 class PoromechanicsAssembler:
@@ -38,9 +40,16 @@ class PoromechanicsAssembler:
         self.ks = Constant(parameters["ks"])
         self.kf = Constant(parameters["kf"])
         self.dt = Constant(parameters["dt"])
-        self.adim_s = self.dt**2/self.rhos
-        self.adim_f = self.dt/self.rhof
-        self.adim_p = self.dt * self.ks
+
+        # These factors in the end only make residuals smaller and harder
+        # to use for measuring convergence. Still here in case someone wants
+        # to test them.
+        self.adim_s = Constant(1.0)
+        # self.adim_s = self.dt**2/self.rhos
+        self.adim_f = Constant(1.0)
+        # self.adim_f = self.dt/self.rhof
+        self.adim_p = Constant(1.0)
+        # self.adim_p = self.dt * self.ks
 
         # Aux params
         self.phis = 1 - self.phi0
@@ -53,6 +62,7 @@ class PoromechanicsAssembler:
         self.betap = Constant(parameters["betap"])
 
     def assemble(self):
+        t0_assemble = time()
 
         def hooke(ten):
             return 2 * self.mu_s * ten + self.lmbda * tr(ten) * Identity(self.dim)
@@ -160,6 +170,8 @@ class PoromechanicsAssembler:
             a_p = a_p
         assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p, tensor=self.P)
         assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p_diff, tensor=self.P_diff)
+        if MPI.COMM_WORLD.rank == 0:
+            print("---- Assembly A, P time = {}s".format(time() - t0_assemble), flush=True)
 
     def getMatrix(self):
         """
@@ -177,7 +189,7 @@ class PoromechanicsAssembler:
         """
         Get Dolfin::PETScVector RHS at time t
         """
-
+        t0_rhs = time()
         v, w, q = TestFunctions(self.V)
 
         # Compute solid residual
@@ -207,4 +219,6 @@ class PoromechanicsAssembler:
         # assemble(rhs_s_n + rhs_f_n + rhs_p_n, tensor=self.b)
         assemble(self.adim_s * rhs_s_n + self.adim_f *
                  rhs_f_n + self.adim_p * rhs_p_n, tensor=self.b)
+        if MPI.COMM_WORLD.rank == 0:
+            print("---- Assembly RHS = {}s".format(time() - t0_rhs), flush=True)
         return self.b

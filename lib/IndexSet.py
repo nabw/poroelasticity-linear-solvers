@@ -5,7 +5,7 @@ from itertools import chain
 
 
 class IndexSet:
-    def __init__(self, V):
+    def __init__(self, V, two_way=True):
         # Keep sub dimensions
         self.ns = V.sub(0).dim()
         self.nf = V.sub(1).dim()
@@ -21,22 +21,23 @@ class IndexSet:
         # in the 2-way splittings, so they are still useful but bear a different meaning.
 
         # All gather the global fp dofmap
-        comm = MPI.COMM_WORLD
-        dofs_fp_global = self.dofmap_fp.copy()
-        dofs_fp_global = comm.allgather(dofs_fp_global)
-        dofs_fp_global = list(chain(*dofs_fp_global))
+        if two_way:
+            comm = MPI.COMM_WORLD
+            dofs_fp_global = self.dofmap_fp.copy()
+            dofs_fp_global = comm.allgather(dofs_fp_global)
+            dofs_fp_global = list(chain(*dofs_fp_global))
 
-        # Then find the corresponding local indexex in f-p subspace
-        dofs_f = []
-        dofs_p = []
-        for i, dof in enumerate(dofs_fp_global):
-            if dof in self.dofmap_f:
-                dofs_f.append(i)
-            elif dof in self.dofmap_p:
-                dofs_p.append(i)
-        # Replace global dofmaps with f-p dofmaps
-        self.dofmap_f = dofs_f
-        self.dofmap_p = dofs_p
+            # Then find the corresponding local indexex in f-p subspace
+            dofs_f = []
+            dofs_p = []
+            for i, dof in enumerate(dofs_fp_global):
+                if dof in self.dofmap_f:
+                    dofs_f.append(i)
+                elif dof in self.dofmap_p:
+                    dofs_p.append(i)
+            # Replace global dofmaps with f-p dofmaps
+            self.dofmap_f = dofs_f
+            self.dofmap_p = dofs_p
 
         # and Index Sets
         self.is_s = PETSc.IS().createGeneral(self.dofmap_s)

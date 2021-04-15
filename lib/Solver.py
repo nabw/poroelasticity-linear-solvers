@@ -1,5 +1,6 @@
 from petsc4py import PETSc
 from mpi4py import MPI
+from time import perf_counter as time
 
 
 def converged(_ksp, _it, _rnorm, *args, **kwargs):
@@ -18,12 +19,12 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
     dummy.getSubVector(index_map.is_f, dummy_f)
     dummy.getSubVector(index_map.is_p, dummy_p)
 
-    res_s_a = dummy_s.norm()
-    res_s_r = dummy_s.norm()/b0_s
-    res_f_a = dummy_f.norm()
-    res_f_r = dummy_f.norm()/b0_f
-    res_p_a = dummy_p.norm()
-    res_p_r = dummy_p.norm()/b0_p
+    res_s_a = dummy_s.norm(PETSc.NormType.NORM_INFINITY)
+    res_s_r = res_s_a/b0_s
+    res_f_a = dummy_f.norm(PETSc.NormType.NORM_INFINITY)
+    res_f_r = res_f_a/b0_f
+    res_p_a = dummy_p.norm(PETSc.NormType.NORM_INFINITY)
+    res_p_r = res_p_a/b0_p
 
     error_abs = max(res_s_a, res_f_a, res_p_a)
     error_rel = max(res_s_r, res_f_r, res_p_r)
@@ -48,12 +49,15 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
 
 class Solver:
     def __init__(self, A, b, PC, parameters, index_map):
+        t0_solver = time()
         self.A = A
         self.b = b
         self.PC = PC
         self.parameters = parameters
         self.index_map = index_map
         self.set_up()
+        if MPI.COMM_WORLD.rank == 0:
+            print("---- Solver set up time = {}s".format(time() - t0_solver), flush=True)
 
     def set_up(self):
         # Create linear solver
@@ -83,11 +87,11 @@ class Solver:
         b.restoreSubVector(self.index_map.is_s, b_s)
         b.restoreSubVector(self.index_map.is_f, b_f)
         b.restoreSubVector(self.index_map.is_p, b_p)
-        if b0_s < 1e-13:
+        if b0_s < 1e-10:
             b0_s = 1
-        if b0_f < 1e-13:
+        if b0_f < 1e-10:
             b0_f = 1
-        if b0_p < 1e-13:
+        if b0_p < 1e-10:
             b0_p = 1
         kwargs = {'index_map': self.index_map, 'b': b, 'dummy': dummy, 'dummy_subs': (
             dummy_s, dummy_f, dummy_p), 'b0_norms': (b0_s, b0_f, b0_p), 'monitor': monitor_convergence}

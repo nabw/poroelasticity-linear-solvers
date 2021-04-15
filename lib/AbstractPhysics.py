@@ -1,5 +1,6 @@
 from fenics import *
 from mpi4py import MPI
+from time import perf_counter as time
 
 
 class AbstractPhysics:
@@ -65,14 +66,13 @@ class AbstractPhysics:
         """
 
         # All functions start as 0 (for now), so no modifications are required.
-
-        from time import time
-        current_time = time()
-        iterations = []
+        t0_simulation = time()
 
         if self.output_solutions:
             self.export(self.t0)
 
+        current_time = time()
+        iterations = []
         while self.t < self.tf:
 
             self.t += self.dt
@@ -82,3 +82,4 @@ class AbstractPhysics:
             if self.output_solutions:
                 self.export(self.t)
             current_time = time()
+        self.pprint("Total simulation time = {}s".format(time() - t0_simulation))

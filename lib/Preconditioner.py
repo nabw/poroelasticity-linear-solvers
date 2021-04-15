@@ -31,6 +31,7 @@ class PreconditionerCC(object):
     def allocate_temp_vectors(self):
         self.temp_sx = PETSc.Vec().create()
         self.temp2_sx = PETSc.Vec().create()
+        self.temp3_sx = PETSc.Vec().create()
         self.temp_sy = PETSc.Vec().create()
         self.temp_fx = PETSc.Vec().create()
         self.temp2_fx = PETSc.Vec().create()
@@ -41,11 +42,7 @@ class PreconditionerCC(object):
         self.temp2_fpx = PETSc.Vec().create()
         self.temp_fpy = PETSc.Vec().create()
         # Counter parts for CC solver
-        self.temp_s_diffx = PETSc.Vec().create()
-        self.temp2_s_diffx = PETSc.Vec().create()
         self.temp_s_diffy = PETSc.Vec().create()
-        self.temp_f_diffx = PETSc.Vec().create()
-        self.temp2_f_diffx = PETSc.Vec().create()
         self.temp_f_diffy = PETSc.Vec().create()
         self.temp_p_diffx = PETSc.Vec().create()
         self.temp_p_diffy = PETSc.Vec().create()
@@ -54,18 +51,15 @@ class PreconditionerCC(object):
         self.Ms_s = self.M.createSubMatrix(self.is_s, self.is_s)
         self.Ms_f = self.M.createSubMatrix(self.is_s, self.is_f)
         self.Ms_p = self.M.createSubMatrix(self.is_s, self.is_p)
-        self.Mf_s = self.M.createSubMatrix(self.is_f, self.is_s)
         self.Mf_f = self.M.createSubMatrix(self.is_f, self.is_f)
         self.Mf_p = self.M.createSubMatrix(self.is_f, self.is_p)
-        self.Mp_s = self.M.createSubMatrix(self.is_p, self.is_s)
-        self.Mp_f = self.M.createSubMatrix(self.is_p, self.is_f)
         self.Mp_p = self.M.createSubMatrix(self.is_p, self.is_p)
         self.Mfp_s = self.M.createSubMatrix(self.is_fp, self.is_s)
         self.Mfp_fp = self.M.createSubMatrix(self.is_fp, self.is_fp)
         self.Mp_diff = self.M_diff.createSubMatrix(self.is_p, self.is_p)
 
         # Only diagonal blocks, used to create solvers
-        self.matrices = (self.Ms_s, self.Mf_f, self.Mp_p, self.Mfp_fp, self.Mp_diff)
+        self.matrices_elliptic = (self.Ms_s, self.Mf_f, self.Mp_p, self.Mp_diff)
 
     def create_solvers(self):
         self.ksp_s = PETSc.KSP().create()
@@ -73,7 +67,7 @@ class PreconditionerCC(object):
         self.ksp_p = PETSc.KSP().create()
         self.ksp_fp = PETSc.KSP().create()
         self.ksp_p_diff = PETSc.KSP().create()
-        self.ksps = (self.ksp_s, self.ksp_f, self.ksp_p, self.ksp_fp, self.ksp_p_diff)
+        self.ksps_elliptic = (self.ksp_s, self.ksp_f, self.ksp_p, self.ksp_p_diff)
 
     def setup_elliptic_solver(self, solver, mat):
         solver.setOperators(mat, mat)
@@ -93,8 +87,7 @@ class PreconditionerCC(object):
             pc.setHYPREType(hypre_type)
 
         if self.inner_pc_type == "gamg":
-            pc.setGAMGSmooths(10)
-            # pc.setGAMGLevels(10)
+            pc.setGAMGSmooths(1)
 
     def setup_fieldsplit(self, solver, mat):
         solver.setOperators(mat, mat)
@@ -117,8 +110,8 @@ class PreconditionerCC(object):
             PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_type", hypre_type)
         if self.inner_pc_type == "gamg":
             # PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_type", "agg")
-            PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_agg_nsmooths", 10)
-            # PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_sym_graph", True)
+            PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_agg_nsmooths", 1)
+            PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_sym_graph", True)
         pc.setFromOptions()
 
     def setUp(self, pc):
@@ -131,7 +124,7 @@ class PreconditionerCC(object):
         # Extract sub-matrices
         self.allocate_submatrices()
 
-        for solver, mat in zip(self.ksps, self.matrices):
+        for solver, mat in zip(self.ksps_elliptic, self.matrices_elliptic):
             self.setup_elliptic_solver(solver, mat)
 
         self.setup_fieldsplit(self.ksp_fp, self.Mfp_fp)
@@ -139,22 +132,24 @@ class PreconditionerCC(object):
     def apply(self, pc, x, y):
         # Result is y = A^{-1}x
 
-        x.getSubVector(self.is_s, self.temp_sx)
         y.getSubVector(self.is_s, self.temp_sy)
+        x.getSubVector(self.is_s, self.temp_sx)
 
-        # TODO: use mmult to avoid creating temp vectors for off-diagonal contributions
+        # TODO: use mult to avoid creating temp vectors for off-diagonal contributions
         if self.flag_3_way:
 
             # Extract subvectors
+            x.getSubVector(self.is_s, self.temp2_sx)
+            x.getSubVector(self.is_s, self.temp3_sx)
             x.getSubVector(self.is_f, self.temp_fx)
-            y.getSubVector(self.is_f, self.temp_fy)
-            x.getSubVector(self.is_f, self.temp_f_diffx)
-            x.getSubVector(self.is_s, self.temp_s_diffx)
-            y.getSubVector(self.is_s, self.temp_s_diffy)
-            y.getSubVector(self.is_f, self.temp_f_diffy)
+            x.getSubVector(self.is_f, self.temp2_fx)
             x.getSubVector(self.is_p, self.temp_px)
-            y.getSubVector(self.is_p, self.temp_py)
             x.getSubVector(self.is_p, self.temp_p_diffx)
+
+            y.getSubVector(self.is_s, self.temp_s_diffy)
+            y.getSubVector(self.is_f, self.temp_fy)
+            y.getSubVector(self.is_f, self.temp_f_diffy)
+            y.getSubVector(self.is_p, self.temp_py)
             y.getSubVector(self.is_p, self.temp_p_diffy)
 
             # Solve both pressures first
@@ -165,14 +160,28 @@ class PreconditionerCC(object):
             self.ksp_p_diff.solve(self.temp_p_diffx, self.temp_p_diffy)
 
             # Then fluids
-            self.ksp_f.solve(self.temp_fx - self.Mf_p * self.temp_py, self.temp_fy)
-            self.ksp_f.solve(self.temp_fx - self.Mf_p * self.temp_p_diffy, self.temp_f_diffy)
+            # FS
+            self.Mf_p.mult(self.temp_py, self.temp2_fx)
+            self.temp2_fx.aypx(-1, self.temp_fx)
+            self.ksp_f.solve(self.temp2_fx, self.temp_fy)
+            # Diff
+            self.Mf_p.mult(self.temp_p_diffy, self.temp2_fx)
+            self.temp2_fx.aypx(-1, self.temp_fx)
+            self.ksp_f.solve(self.temp2_fx, self.temp_f_diffy)
 
             # Finally solids
-            self.ksp_s.solve(self.temp_sx - self.Ms_p * self.temp_py -
-                             self.Ms_f * self.temp_fy, self.temp_sy)
-            self.ksp_s.solve(self.temp_sx - self.Ms_p * self.temp_p_diffy -
-                             self.Ms_f * self.temp_f_diffy, self.temp_s_diffy)
+            # FS
+            self.Ms_f.mult(self.temp_fy, self.temp2_sx)
+            self.Ms_p.mult(self.temp_py, self.temp3_sx)
+            self.temp2_sx.axpy(1, self.temp3_sx)  # temp2 + temp3
+            self.temp2_sx.aypx(-1, self.temp_sx)
+            self.ksp_s.solve(self.temp2_sx, self.temp_sy)
+            # Diff
+            self.Ms_f.mult(self.temp_f_diffy, self.temp2_sx)
+            self.Ms_p.mult(self.temp_p_diffy, self.temp3_sx)
+            self.temp2_sx.axpy(1, self.temp3_sx)  # temp2 + temp3
+            self.temp2_sx.aypx(-1, self.temp_sx)
+            self.ksp_s.solve(self.temp2_sx, self.temp_s_diffy)
 
             # Weighted CC sum
             self.temp_py.scale(self.w1)
@@ -183,18 +192,19 @@ class PreconditionerCC(object):
             self.temp_sy.axpy(self.w2, self.temp_s_diffy)
 
             x.restoreSubVector(self.is_f, self.temp_fx)
-            y.restoreSubVector(self.is_p, self.temp_py)
             x.restoreSubVector(self.is_p, self.temp_px)
             y.restoreSubVector(self.is_f, self.temp_fy)
+            y.restoreSubVector(self.is_p, self.temp_py)
         else:  # use 2way
-            x.getSubVector(self.is_s, self.temp_sx)
-            y.getSubVector(self.is_s, self.temp_sy)
             self.ksp_s.solve(self.temp_sx, self.temp_sy)
             x.getSubVector(self.is_fp, self.temp_fpx)
+            x.getSubVector(self.is_fp, self.temp2_fpx)
             y.getSubVector(self.is_fp, self.temp_fpy)
 
             # compute A_fp_s ys, ys resulting vector from before
-            self.ksp_fp.solve(self.temp_fpx - self.Mfp_s * self.temp_sy, self.temp_fpy)
+            self.Mfp_s.mult(self.temp_sy, self.temp2_fpx)
+            self.temp2_fpx.aypx(-1, self.temp_fpx)
+            self.ksp_fp.solve(self.temp2_fpx, self.temp_fpy)
             x.restoreSubVector(self.is_fp, self.temp_fpx)
             y.restoreSubVector(self.is_fp, self.temp_fpy)
 

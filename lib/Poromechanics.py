@@ -14,7 +14,9 @@ class Poromechanics(AbstractPhysics):
                                                               parameters["fe degree fluid"]),
                                              df.FiniteElement('CG', mesh.ufl_cell(), parameters["fe degree pressure"])))
         self.V = V
-        self.index_map = IndexSet(V)
+        if self.parameters["pc type"] == "diagonal 3-way":
+            self.two_way = False
+        self.index_map = IndexSet(V, self.two_way)
         self.pprint("---- Problem dofs={}".format(V.dim()))
         self.assembler = PoromechanicsAssembler(parameters, V)
         # Start by assembling system matrices
@@ -50,34 +52,6 @@ class Poromechanics(AbstractPhysics):
 
         solver = Solver(A, b, pc, self.parameters, self.index_map)
         return solver.get_solver()
-        # # Then create linear solver
-        # solver_type = self.parameters["solver type"]
-        # atol = self.parameters["solver atol"]
-        # rtol = self.parameters["solver rtol"]
-        # maxiter = self.parameters["solver maxiter"]
-        # monitor_convergence = self.parameters["solver monitor"]
-        # if solver_type == "aar":
-        #     from lib.AAR import AAR
-        #     order = self.parameters["AAR order"]
-        #     p = self.parameters["AAR p"]
-        #     omega = self.parameters["AAR omega"]
-        #     beta = self.parameters["AAR beta"]
-        #     return AAR(order, p, omega, beta, A.mat(), x0=None, pc=pc,
-        #                atol=atol, rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
-        # else:
-        #     from petsc4py import PETSc
-        #     solver = PETSc.KSP().create()
-        #     solver.setOperators(A.mat())
-        #     solver.setType(solver_type)
-        #     solver.setTolerances(rtol, atol, 1e20, maxiter)
-        #     solver.setPC(pc)
-        #     if solver_type == "gmres":
-        #         solver.setGMRESRestart(maxiter)
-        #     if monitor_convergence:
-        #         PETSc.Options().setValue("-ksp_monitor", None)
-        #
-        #     solver.setFromOptions()
-        #     return solver
 
     def solve_time_step(self, t):
         A = self.assembler.getMatrix()
