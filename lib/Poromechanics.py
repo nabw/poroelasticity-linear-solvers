@@ -14,6 +14,7 @@ class Poromechanics(AbstractPhysics):
                                                               parameters["fe degree fluid"]),
                                              df.FiniteElement('CG', mesh.ufl_cell(), parameters["fe degree pressure"])))
         self.V = V
+        self.two_way = True
         if self.parameters["pc type"] == "diagonal 3-way":
             self.two_way = False
         self.index_map = IndexSet(V, self.two_way)
