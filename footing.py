@@ -118,14 +118,14 @@ parameters = {"mu_f": 1e-3,
               "betaf": 0.,
               "betap": 1.,
               "solver rtol": 1e-6,
-              "solver atol": 1e-5,
+              "solver atol": 1e-4,
               "solver maxiter": 500,
               "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "undrained",  # diagonal, undrained, diagonal 3-way
               "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
-              "inner rtol": 1e-8,
+              "inner pc type": "hypre",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner rtol": 1e-6,
               "inner atol": 0,
               "inner maxiter": 100,
               "inner monitor": False,

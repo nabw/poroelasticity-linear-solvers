@@ -99,7 +99,7 @@ class PreconditionerCC(object):
         pc.setFieldSplitIS(("p", self.is_p))
         PETSc.Options().setValue("-pc_fieldsplit_type", "schur")
         PETSc.Options().setValue("-pc_fieldsplit_schur_fact_type", "diag")
-        PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "selfp")  # SIMPLE
+        PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "selfp")  # SIMPLE preconditioner
         PETSc.Options().setValue("-pc_fieldsplit_ksp_type", self.inner_ksp_type)
         PETSc.Options().setValue("-pc_fieldsplit_ksp_atol", self.inner_atol)
         PETSc.Options().setValue("-pc_fieldsplit_ksp_rtol", self.inner_rtol)
