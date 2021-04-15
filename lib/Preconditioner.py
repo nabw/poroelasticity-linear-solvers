@@ -75,7 +75,7 @@ class PreconditionerCC(object):
         self.ksp_p_diff = PETSc.KSP().create()
         self.ksps = (self.ksp_s, self.ksp_f, self.ksp_p, self.ksp_fp, self.ksp_p_diff)
 
-    def setup_solver(self, solver, mat):
+    def setup_elliptic_solver(self, solver, mat):
         solver.setOperators(mat, mat)
         solver.setType(self.inner_ksp_type)
         pc = solver.getPC()
@@ -92,8 +92,34 @@ class PreconditionerCC(object):
             hypre_type = "boomeramg"  # in 2D only parasails works
             pc.setHYPREType(hypre_type)
 
-        # if self.inner_pc_type == "gamg":
-            # pc.setGAMGSmooths(2)
+        if self.inner_pc_type == "gamg":
+            pc.setGAMGSmooths(10)
+            # pc.setGAMGLevels(10)
+
+    def setup_fieldsplit(self, solver, mat):
+        solver.setOperators(mat, mat)
+        # Prefer GMRES for saddle point problem with asymmetric preconditioner
+        solver.setType("gmres")
+        pc = solver.getPC()
+        pc.setType('fieldsplit')
+        pc.setFieldSplitIS(("uf", self.is_f))
+        pc.setFieldSplitIS(("p", self.is_p))
+        PETSc.Options().setValue("-pc_fieldsplit_type", "schur")
+        PETSc.Options().setValue("-pc_fieldsplit_ksp_type", self.inner_ksp_type)
+        PETSc.Options().setValue("-pc_fieldsplit_ksp_atol", self.inner_atol)
+        PETSc.Options().setValue("-pc_fieldsplit_ksp_rtol", self.inner_rtol)
+        PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", self.inner_maxiter)
+        PETSc.Options().setValue("-pc_fieldsplit_pc_type", self.inner_pc_type)
+        if self.inner_pc_type == "lu":
+            PETSc.Options().setValue("-pc_fieldsplit_pc_factor_mat_solver_type", "mumps")
+        if self.inner_pc_type == "hypre":
+            hypre_type = "boomeramg"  # in 2D only parasails works
+            PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_type", hypre_type)
+        if self.inner_pc_type == "gamg":
+            # PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_type", "agg")
+            PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_agg_nsmooths", 10)
+            # PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_sym_graph", True)
+        pc.setFromOptions()
 
     def setUp(self, pc):
         # create local ksp and pc contexts
@@ -106,7 +132,9 @@ class PreconditionerCC(object):
         self.allocate_submatrices()
 
         for solver, mat in zip(self.ksps, self.matrices):
-            self.setup_solver(solver, mat)
+            self.setup_elliptic_solver(solver, mat)
+
+        self.setup_fieldsplit(self.ksp_fp, self.Mfp_fp)
 
     def apply(self, pc, x, y):
         # Result is y = A^{-1}x

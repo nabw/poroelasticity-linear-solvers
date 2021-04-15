@@ -29,11 +29,13 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
     error_rel = max(res_s_r, res_f_r, res_p_r)
 
     if kwargs['monitor']:
+        width = 11
         if _it == 0 and MPI.COMM_WORLD.rank == 0:
-            print("KSP errors: abs_s, abs_f, abs_p, rel_s, rel_f, rel_p")
+            print("KSP errors: {}, {}, {}, {}, {}, {}".format('abs_s'.rjust(width), 'abs_f'.rjust(
+                width), 'abs_p'.rjust(width), 'rel_s'.rjust(width), 'rel_f'.rjust(width), 'rel_p'.rjust(width)), flush=True)
         if MPI.COMM_WORLD.rank == 0:
-            print("KSP it {}: {:.2e}, {:.2e}, {:.2e}, {:.2e}, {:.2e}, {:.2e}".format(
-                _it, res_s_a, res_f_a, res_p_a, res_s_r, res_f_r, res_p_r))
+            print("KSP it {}:   {:.5e}, {:.5e}, {:.5e}, {:.5e}, {:.5e}, {:.5e}".format(
+                _it, res_s_a, res_f_a, res_p_a, res_s_r, res_f_r, res_p_r), flush=True)
     if error_abs < _ksp.atol or error_rel < _ksp.rtol:
         # Convergence
         return 1

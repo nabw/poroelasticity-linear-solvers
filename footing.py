@@ -90,11 +90,11 @@ def ff_sur(t): return Constant((0, 0))
 
 def fs_sur(t):
     # return Expression(("0", "abs(x[0]-L)<L/2?-t*1e5:0"), t=min(0.5, t), L=length / 2, degree=4)
-    return Expression(("0", "abs(x[0]-L)<L/2?(-tt*1e6):0"), tt=min(0.5, t), L=length / 2, degree=1)
+    return Expression(("0", "abs(x[0]-L)<L/2?(-val):0"), L=length / 2, val=min(t, 1.0)*1e5, degree=1)
 
 
 E = 3e4
-nu = 0.499
+nu = 0.2
 mu_s = E / (2 * (1 + nu))
 lmbda = E * nu / ((1 + nu) * (1 - 2 * nu))
 parameters = {"mu_f": 1e-3,
@@ -105,9 +105,9 @@ parameters = {"mu_f": 1e-3,
               "lmbda": lmbda,
               "ks": 1e6,
               "kf": 1e-7,
-              "dt": 0.05,
+              "dt": 0.1,
               "t0": 0.0,
-              "tf": 1.0,
+              "tf": 0.1,
               "fe degree solid": 2,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
@@ -117,16 +117,16 @@ parameters = {"mu_f": 1e-3,
               "betas": -0.5,
               "betaf": 0.,
               "betap": 1.,
-              "solver rtol": 0,
-              "solver atol": 1e-10,
+              "solver rtol": 1e-6,
+              "solver atol": 1e-5,
               "solver maxiter": 500,
               "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "undrained",  # diagonal, undrained, diagonal 3-way
-              "inner ksp type": "minres",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
-              "inner rtol": 1e-8,
-              "inner atol": 1e-10,
+              "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
+              "inner pc type": "hypre",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner rtol": 1e-6,
+              "inner atol": 0,
               "inner maxiter": 1000,
               "inner monitor": False,
               "inner accel order": 0,  # >1 diverges always, 1 works with gmres only.

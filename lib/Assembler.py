@@ -38,9 +38,9 @@ class PoromechanicsAssembler:
         self.ks = Constant(parameters["ks"])
         self.kf = Constant(parameters["kf"])
         self.dt = Constant(parameters["dt"])
-        self.adimensionalization_factor_s = self.dt**2/self.rhos
-        self.adimensionalization_factor_f = self.dt/self.rhof
-        self.adimensionalization_factor_p = self.dt * self.ks
+        self.adim_s = self.dt**2/self.rhos
+        self.adim_f = self.dt/self.rhof
+        self.adim_p = self.dt * self.ks
 
         # Aux params
         self.phis = 1 - self.phi0
@@ -82,7 +82,7 @@ class PoromechanicsAssembler:
 
         a_p_diff = Constant(0.0) * p * q * dx
 
-        assemble(a_s + a_f + a_p, tensor=self.A)
+        assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p, tensor=self.A)
 
         # Then, preconditioner matrices (FS and DIFF)
         if self.prec_type == "undrained":
@@ -158,8 +158,8 @@ class PoromechanicsAssembler:
             a_s = a_s
             a_f = a_f
             a_p = a_p
-        assemble(a_s + a_f + a_p, tensor=self.P)
-        assemble(a_s + a_f + a_p_diff, tensor=self.P_diff)
+        assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p, tensor=self.P)
+        assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p_diff, tensor=self.P_diff)
 
     def getMatrix(self):
         """
@@ -205,6 +205,6 @@ class PoromechanicsAssembler:
         r_p = rhs_p_n - lhs_p_n
 
         # assemble(rhs_s_n + rhs_f_n + rhs_p_n, tensor=self.b)
-        assemble(self.adimensionalization_factor_s * rhs_s_n + self.adimensionalization_factor_f *
-                 rhs_f_n + self.adimensionalization_factor_p * rhs_p_n, tensor=self.b)
+        assemble(self.adim_s * rhs_s_n + self.adim_f *
+                 rhs_f_n + self.adim_p * rhs_p_n, tensor=self.b)
         return self.b
