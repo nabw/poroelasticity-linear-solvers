@@ -124,10 +124,10 @@ parameters = {"mu_f": 1e-3,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "undrained",  # diagonal, undrained, diagonal 3-way
               "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "hypre",  # bjacobi, ilu, hypre, lu, gamg, asm
-              "inner rtol": 1e-6,
+              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner rtol": 1e-8,
               "inner atol": 0,
-              "inner maxiter": 1000,
+              "inner maxiter": 100,
               "inner monitor": False,
               "inner accel order": 0,  # >1 diverges always, 1 works with gmres only.
               "AAR order": 10,
