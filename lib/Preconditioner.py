@@ -85,6 +85,13 @@ class PreconditionerCC(object):
         if self.inner_pc_type == "hypre":
             hypre_type = "boomeramg"  # in 2D only parasails works
             pc.setHYPREType(hypre_type)
+            PETSc.Options().setValue("-pc_hypre_type", "boomeramg")
+            PETSc.Options().setValue("-pc_hypre_boomeramg_P_max", 4)
+            PETSc.Options().setValue("-pc_hypre_boomeramg_agg_nl", 1)
+            PETSc.Options().setValue("-pc_hypre_boomeramg_agg_num_paths", 2)
+            PETSc.Options().setValue("-pc_hypre_boomeramg_coarsen_type", "HMIS")
+            PETSc.Options().setValue("-pc_hypre_boomeramg_interp_type", "ext+i")
+            PETSc.Options().setValue("-pc_hypre_boomeramg_no_CF", True)
 
         if self.inner_pc_type == "gamg":
             pc.setGAMGSmooths(1)
@@ -111,7 +118,6 @@ class PreconditionerCC(object):
             PETSc.Options().setValue("-pc_fieldsplit_pc_factor_mat_solver_type", "mumps")
         if self.inner_pc_type == "hypre":
             # Kirby, Mitchell (2017).
-            hypre_type = "boomeramg"
             PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_type", "boomeramg")
             PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_P_max", 4)
             PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_agg_nl", 1)
