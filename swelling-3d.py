@@ -58,10 +58,10 @@ parameters = {"mu_f": 0.035,
               "solver rtol": 1e-6,
               "solver maxiter": 500,
               "solver monitor": False,
-              "solver type": "gmres",  # cg, gmres, aar
+              "solver type": "aar",  # cg, gmres, aar
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
-              "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "gamg",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner ksp type": "gmres",  # preonly, gmres, cg, bicgstab,
+              "inner pc type": "hypre",  # bjacobi, ilu, hypre, lu, gamg, asm
               "inner rtol": 1e-4,
               "inner atol": 0.0,
               "inner maxiter": 100,

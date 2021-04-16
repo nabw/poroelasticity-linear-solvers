@@ -82,4 +82,4 @@ class AbstractPhysics:
             if self.output_solutions:
                 self.export(self.t)
             current_time = time()
-        self.pprint("Total simulation time = {}s".format(time() - t0_simulation))
+        self.pprint("Total simulation time = {}s\n".format(time() - t0_simulation))

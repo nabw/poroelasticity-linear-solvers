@@ -39,11 +39,14 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
                 _it, res_s_a, res_f_a, res_p_a, res_s_r, res_f_r, res_p_r), flush=True)
     if error_abs < _ksp.atol or error_rel < _ksp.rtol:
         # Convergence
+        if MPI.COMM_WORLD.rank == 0:
+            print("KSP converged", flush=True)
         return 1
     elif _it > _ksp.max_it or error_abs > _ksp.divtol:
         # Divergence
         return -1
     else:
+        # Continue
         return 0
 
 
