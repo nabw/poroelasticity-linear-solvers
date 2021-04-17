@@ -27,6 +27,8 @@ class Poromechanics(AbstractPhysics):
         self.us_nm1, self.uf_nm1, self.p_nm1 = self.sol.split(True)
         self.us_nm2 = self.us_nm1.copy(True)
 
+        self.first_timestep = True
+
     def set_bcs(self, bcs, bcs_diff):
         """
         Set boundary conditions to both physics. Assumed to be constant.
@@ -52,9 +54,11 @@ class Poromechanics(AbstractPhysics):
         pc = pc.get_pc()
 
         solver = Solver(A, b, pc, self.parameters, self.index_map)
-        return solver.get_solver()
+        solver.create_solver(A, b, pc)
+        self.solver = solver
 
     def solve_time_step(self, t):
+
         A = self.assembler.getMatrix()
         P, P_diff = self.assembler.getPreconditioners()
         b = self.assembler.getRHS(t, self.us_nm1, self.us_nm2, self.uf_nm1, self.p_nm1)
@@ -64,14 +68,18 @@ class Poromechanics(AbstractPhysics):
                 bc.apply(obj)
         for bc in self.bcs_diff:
             bc.apply(P_diff)
-        solver = self.create_solver(A, P, P_diff, b)
-        solver.solve(b.vec(), self.sol.vector().vec())
+        if self.first_timestep:
+            self.create_solver(A, P, P_diff, b)
+            self.first_timestep = False
 
-        self.sol.vector().apply("")
+        self.solver.set_up()
+        self.solver.solve(b.vec(), self.sol.vector().vec())
+
+        self.sol.vector().apply("")  # Update ghost dofs
         # Update solution
         us, uf, p = self.sol.split(True)
         df.assign(self.us_nm2, self.us_nm1)
         df.assign(self.us_nm1, us)
         df.assign(self.uf_nm1, uf)
         df.assign(self.p_nm1, p)
-        return solver.getIterationNumber()
+        return self.solver.getIterationNumber()

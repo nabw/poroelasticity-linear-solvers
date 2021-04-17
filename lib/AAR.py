@@ -38,6 +38,10 @@ class AAR:
         else:
             self.pc = pc
 
+    def set_up(self):
+        # TODO: Set convergence test
+        pass
+
     def solve(self, b, sol):
 
         if not self.x0:

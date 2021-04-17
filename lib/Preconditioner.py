@@ -72,8 +72,15 @@ class PreconditionerCC(object):
     def setup_elliptic_solver(self, solver, mat):
         solver.setOperators(mat, mat)
         solver.setType(self.inner_ksp_type)
+        solver.setInitialGuessNonzero(True)
+        # solver.setNormType(2)  # 2 unpreconditioned, 1 preconditioned
         pc = solver.getPC()
         pc.setType(self.inner_pc_type)
+
+        if self.inner_monitor:
+            PETSc.Options().setValue("-ksp_monitor", None)
+        else:
+            PETSc.Options().setValue("-ksp_monitor_cancel", None)
 
         if self.inner_ksp_type != "preonly":
             solver.setTolerances(self.inner_rtol, self.inner_atol, 1e20, self.inner_maxiter)
@@ -83,8 +90,6 @@ class PreconditionerCC(object):
             pc.setFactorSolverType(factor_method)
 
         if self.inner_pc_type == "hypre":
-            hypre_type = "boomeramg"  # in 2D only parasails works
-            pc.setHYPREType(hypre_type)
             PETSc.Options().setValue("-pc_hypre_type", "boomeramg")
             PETSc.Options().setValue("-pc_hypre_boomeramg_P_max", 4)
             PETSc.Options().setValue("-pc_hypre_boomeramg_agg_nl", 1)
@@ -95,20 +100,25 @@ class PreconditionerCC(object):
 
         if self.inner_pc_type == "gamg":
             pc.setGAMGSmooths(1)
+        solver.setFromOptions()
+        pc.setFromOptions()
 
     def setup_fieldsplit(self, solver, mat):
         solver.setOperators(mat, mat)
         # Prefer GMRES for saddle point problem with asymmetric preconditioner
         solver.setType("gmres")
+        solver.setInitialGuessNonzero(True)
+        solver.setNormType(2)  # 2 unpreconditioned, 1 preconditioned
+
         pc = solver.getPC()
         pc.setType('fieldsplit')
         pc.setFieldSplitIS(("uf", self.is_f))
-        # pc.setFieldSplitIS(("p", self.is_p))
+        pc.setFieldSplitIS(("p", self.is_p))
         # Kirby, Mitchell (2017).
         PETSc.Options().setValue("-pc_fieldsplit_ksp_gmres_modifiedgramschmidt", None)
         PETSc.Options().setValue("-pc_fieldsplit_type", "schur")
-        PETSc.Options().setValue("-pc_fieldsplit_schur_fact_type", "diag")  # diag, full, lower
-        PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "selfp")  # selfp (SIMPLE), a11
+        PETSc.Options().setValue("-pc_fieldsplit_schur_fact_type", "full")  # diag, full, lower
+        PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "a11")  # selfp (SIMPLE), a11
         PETSc.Options().setValue("-pc_fieldsplit_ksp_type", self.inner_ksp_type)
         PETSc.Options().setValue("-pc_fieldsplit_ksp_atol", self.inner_atol)
         PETSc.Options().setValue("-pc_fieldsplit_ksp_rtol", self.inner_rtol)
@@ -145,7 +155,10 @@ class PreconditionerCC(object):
         for solver, mat in zip(self.ksps_elliptic, self.matrices_elliptic):
             self.setup_elliptic_solver(solver, mat)
 
-        self.setup_fieldsplit(self.ksp_fp, self.Mfp_fp)
+        if self.inner_pc_type == "lu":
+            self.setup_elliptic_solver(self.ksp_fp, self.Mfp_fp)
+        else:
+            self.setup_fieldsplit(self.ksp_fp, self.Mfp_fp)
 
     def apply(self, pc, x, y):
         # Result is y = A^{-1}x

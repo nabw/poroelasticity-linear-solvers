@@ -3,6 +3,8 @@ from lib.MeshCreation import generate_square
 from lib.Poromechanics import Poromechanics
 from lib.Parser import Parser
 from time import time
+from petsc4py import PETSc
+
 
 initial_time = time()
 parser = Parser()
@@ -43,28 +45,28 @@ parameters = {"mu_f": 0.035,
               "kf": 1e-7,
               "dt": 0.1,
               "t0": 0.0,
-              "tf": 1.5,
+              "tf": 0.3,
               "fe degree solid": 2,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
               "maxiter": 1000,
-              "output solutions": True,
+              "output solutions": False,
               # "output_name": "monolithic",
               "output name": "swelling",
               "betas": -0.5,
               "betaf": 0.,
               "betap": 1.,
+              "solver atol": 1e-6,
               "solver rtol": 1e-6,
-              "solver atol": 1e-8,
               "solver maxiter": 100,
               "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
-              "inner ksp type": "preonly",  # preonly, gmres, cg, bicgstab,
+              "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
               "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
-              "inner rtol": 1e-10,
               "inner atol": 0,
-              "inner maxiter": 100,
+              "inner rtol": 1e-6,
+              "inner maxiter": 1000,
               "inner monitor": False,
               "inner accel order": 0,  # >1 diverges always, 1 works with gmres only.
               "AAR order": 10,

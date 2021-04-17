@@ -56,11 +56,50 @@ class Solver:
         self.A = A
         self.b = b
         self.PC = PC
+        self.solver = None
         self.parameters = parameters
         self.index_map = index_map
-        self.set_up()
         if MPI.COMM_WORLD.rank == 0:
             print("---- Solver set up time = {}s".format(time() - t0_solver), flush=True)
+
+    def create_solver(self, A, b, PC):
+
+        b = self.b.vec()
+        self.dummy = b.copy()
+        self.dummy_s = PETSc.Vec().create()
+        self.dummy_f = PETSc.Vec().create()
+        self.dummy_p = PETSc.Vec().create()
+        b.getSubVector(self.index_map.is_s, self.dummy_s)
+        b.getSubVector(self.index_map.is_f, self.dummy_f)
+        b.getSubVector(self.index_map.is_p, self.dummy_p)
+        b.restoreSubVector(self.index_map.is_s, self.dummy_s)
+        b.restoreSubVector(self.index_map.is_f, self.dummy_f)
+        b.restoreSubVector(self.index_map.is_p, self.dummy_p)
+
+        solver_type = self.parameters["solver type"]
+        atol = self.parameters["solver atol"]
+        rtol = self.parameters["solver rtol"]
+        maxiter = self.parameters["solver maxiter"]
+        monitor_convergence = self.parameters["solver monitor"]
+        if self.parameters["solver type"] == "aar":
+            from lib.AAR import AAR
+            order = self.parameters["AAR order"]
+            p = self.parameters["AAR p"]
+            omega = self.parameters["AAR omega"]
+            beta = self.parameters["AAR beta"]
+            self.solver = AAR(order, p, omega, beta, self.A.mat(), x0=None, pc=self.PC, atol=atol,
+                              rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
+        else:
+            solver = PETSc.KSP().create()
+            solver.setInitialGuessNonzero(True)
+            solver.setOperators(self.A.mat())
+            solver.setType(self.parameters["solver type"])
+            solver.setTolerances(rtol, atol, 1e20, maxiter)
+            solver.setPC(self.PC)
+            if solver_type == "gmres":
+                solver.setGMRESRestart(maxiter)
+            solver.setFromOptions()
+            self.solver = solver
 
     def set_up(self):
         # Create linear solver
@@ -72,7 +111,7 @@ class Solver:
 
         # Prepare elements for convergence test:
         args = None
-        #index_map, b, dummy, dummy_s, dummy_f, dummy_p, b0_s, b0_f, b0_p
+        # index_map, b, dummy, dummy_s, dummy_f, dummy_p, b0_s, b0_f, b0_p
         b = self.b.vec()
         dummy = b.copy()
         b_s = PETSc.Vec().create()
@@ -99,28 +138,13 @@ class Solver:
         kwargs = {'index_map': self.index_map, 'b': b, 'dummy': dummy, 'dummy_subs': (
             dummy_s, dummy_f, dummy_p), 'b0_norms': (b0_s, b0_f, b0_p), 'monitor': monitor_convergence}
         if solver_type == "aar":
-            from lib.AAR import AAR
-            order = self.parameters["AAR order"]
-            p = self.parameters["AAR p"]
-            omega = self.parameters["AAR omega"]
-            beta = self.parameters["AAR beta"]
             self.solver = AAR(order, p, omega, beta, self.A.mat(), x0=None, pc=self.PC, atol=atol,
                               rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
         else:
-            solver = PETSc.KSP().create()
-            solver.setOperators(self.A.mat())
-            solver.setType(solver_type)
-            solver.setTolerances(rtol, atol, 1e20, maxiter)
-            solver.setPC(self.PC)
-            if solver_type == "gmres":
-                solver.setGMRESRestart(maxiter)
-            # if monitor_convergence:
-                # PETSc.Options().setValue("-ksp_monitor", None)
+            self.solver.setConvergenceTest(converged, args, kwargs)
 
-            solver.setConvergenceTest(converged, args, kwargs)
+    def getIterationNumber(self):
+        return self.solver.getIterationNumber()
 
-            solver.setFromOptions()
-            self.solver = solver
-
-    def get_solver(self):
-        return self.solver
+    def solve(self, b, x):
+        self.solver.solve(b, x)
