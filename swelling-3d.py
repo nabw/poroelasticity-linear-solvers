@@ -62,8 +62,8 @@ parameters = {"mu_f": 0.035,
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
               "inner ksp type": "gmres",  # preonly, gmres, cg, bicgstab,
               "inner pc type": "hypre",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner atol": 0,
               "inner rtol": 1e-6,
-              "inner atol": 1e-10,
               "inner maxiter": 100,
               "inner monitor": True,
               "inner accel order": 0,  # >1 diverges always, 1 works with gmres only.

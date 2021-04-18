@@ -64,7 +64,7 @@ parameters = {"mu_f": 0.035,
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
               "inner ksp type": "gmres",  # preonly, gmres, cg, bicgstab,
               "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
-              "inner atol": 1e-10,
+              "inner atol": 0,
               "inner rtol": 1e-6,
               "inner maxiter": 1000,
               "inner monitor": False,
