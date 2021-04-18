@@ -65,7 +65,7 @@ parameters = {"mu_f": 0.035,
               "inner atol": 0,
               "inner rtol": 1e-6,
               "inner maxiter": 100,
-              "inner monitor": True,
+              "inner monitor": False,
               "inner accel order": 0,  # >1 diverges always, 1 works with gmres only.
               "AAR order": 10,
               "AAR p": 5,
