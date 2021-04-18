@@ -4,6 +4,7 @@ from lib.Poromechanics import Poromechanics
 from lib.Parser import Parser
 from time import time
 import numpy as np
+parameters["mesh_partitioner"] = "ParMETIS"
 
 initial_time = time()
 parser = Parser()
