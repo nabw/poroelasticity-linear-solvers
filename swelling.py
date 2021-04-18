@@ -45,13 +45,12 @@ parameters = {"mu_f": 0.035,
               "kf": 1e-7,
               "dt": 0.1,
               "t0": 0.0,
-              "tf": 0.3,
+              "tf": 0.1,
               "fe degree solid": 2,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
               "maxiter": 1000,
               "output solutions": False,
-              # "output_name": "monolithic",
               "output name": "swelling",
               "betas": -0.5,
               "betaf": 0.,
@@ -62,7 +61,7 @@ parameters = {"mu_f": 0.035,
               "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
-              "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
+              "inner ksp type": "gmres",  # preonly, gmres, cg, bicgstab,
               "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
               "inner atol": 0,
               "inner rtol": 1e-6,
@@ -99,3 +98,4 @@ bcs = bcs_s + bcs_f
 
 problem.set_bcs(bcs, bcs_p)
 problem.solve()
+problem.print_timings()

@@ -23,6 +23,11 @@ class Parser:
                           help="Monitor linear solver convergence")
         parser.add_option("--inner-accel-order", type="int", dest="inner_accel_order",
                           help="Order of inner Anderson acceleration")
+        parser.add_option("--output", action="store_true", dest="output",
+                          help="Use this to activate solution export")
+        parser.add_option("--time-final", type="float", dest="tf",
+                          help="Time to end simulation")
+        parser.add_option
 
         options, _ = parser.parse_args()
 
@@ -39,5 +44,9 @@ class Parser:
             options_dict["solver monitor"] = True
         if options.inner_accel_order:
             options_dict["inner accel order"] = options.inner_accel_order
+        if options.output:
+            options_dict["output solutions"] = True
+        if options.tf:
+            options_dict["tf"] = options.tf
         self.options_dict = options_dict
         self.options = options

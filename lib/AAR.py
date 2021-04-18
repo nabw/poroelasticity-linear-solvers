@@ -1,6 +1,7 @@
 import numpy as np
 from petsc4py import PETSc
 from mpi4py import MPI
+from lib.Printing import parprint
 
 
 class AAR:
@@ -117,8 +118,8 @@ class AAR:
             err_rel = err_abs / error0
             it += 1
 
-            if self.monitor_convergence and self.rank == 0:
-                print("---- Iteration [{}] {:3}\tabs={:1.2e}\trel={:1.2e}".format(
+            if self.monitor_convergence:
+                parprint("---- Iteration [{}] {:3}\tabs={:1.2e}\trel={:1.2e}".format(
                     current_type, it, err_abs, err_rel), flush=True)
 
         # Update solution and return number of iterations

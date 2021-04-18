@@ -112,7 +112,7 @@ parameters = {"mu_f": 1e-3,
               "fe degree fluid": 2,
               "fe degree pressure": 1,
               "maxiter": 1000,
-              "output solutions": True,
+              "output solutions": False,
               "output name": "footing",
               "betas": -0.5,
               "betaf": 0.,
@@ -123,11 +123,11 @@ parameters = {"mu_f": 1e-3,
               "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "undrained",  # diagonal, undrained, diagonal 3-way
-              "inner ksp type": "cg",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner ksp type": "gmres",  # preonly, gmres, cg, bicgstab,
+              "inner pc type": "hypre",  # bjacobi, ilu, hypre, lu, gamg, asm
               "inner atol": 0,
               "inner rtol": 1e-6,
-              "inner maxiter": 100,
+              "inner maxiter": 1000,
               "inner monitor": False,
               "inner accel order": 0,  # >1 diverges always, 1 works with gmres only.
               "AAR order": 10,
@@ -166,3 +166,4 @@ bcs = bcs_s + bcs_f
 
 problem.set_bcs(bcs, bcs_p)
 problem.solve()
+problem.print_timings()

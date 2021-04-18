@@ -2,6 +2,7 @@ from lib.AbstractPhysics import AbstractPhysics
 from lib.Assembler import PoromechanicsAssembler
 from lib.IndexSet import IndexSet
 from lib.Solver import Solver
+from lib.Printing import parprint
 import dolfin as df
 
 
@@ -18,7 +19,7 @@ class Poromechanics(AbstractPhysics):
         if self.parameters["pc type"] == "diagonal 3-way":
             self.two_way = False
         self.index_map = IndexSet(V, self.two_way)
-        self.pprint("---- Problem dofs={}".format(V.dim()))
+        parprint("---- Problem dofs={}".format(V.dim()))
         self.assembler = PoromechanicsAssembler(parameters, V)
         # Start by assembling system matrices
         self.assembler.assemble()
@@ -50,8 +51,9 @@ class Poromechanics(AbstractPhysics):
 
         # First create preconditioner
         from lib.Preconditioner import Preconditioner
-        pc = Preconditioner(self.index_map, A, P, P_diff, self.parameters, self.bcs_sub_pressure)
-        pc = pc.get_pc()
+        self.pc = Preconditioner(self.index_map, A, P, P_diff,
+                                 self.parameters, self.bcs_sub_pressure)
+        pc = self.pc.get_pc()
 
         solver = Solver(A, b, pc, self.parameters, self.index_map)
         solver.create_solver(A, b, pc)
@@ -83,3 +85,7 @@ class Poromechanics(AbstractPhysics):
         df.assign(self.uf_nm1, uf)
         df.assign(self.p_nm1, p)
         return self.solver.getIterationNumber()
+
+    def print_timings(self):
+        self.pc.print_timings()
+        self.solver.print_timings()

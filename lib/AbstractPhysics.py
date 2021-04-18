@@ -1,6 +1,7 @@
 from fenics import *
 from mpi4py import MPI
 from time import perf_counter as time
+from lib.Printing import parprint
 
 
 class AbstractPhysics:
@@ -43,10 +44,6 @@ class AbstractPhysics:
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
 
-    def pprint(self, *args):
-        if self.rank == 0:
-            print(*args, flush=True)
-
     def export(self, time):
         """
         Export solutions, assumed to be independent (coming from collapsed spaces).
@@ -77,9 +74,9 @@ class AbstractPhysics:
 
             self.t += self.dt
             its = self.solve_time_step(self.t)
-            self.pprint(
+            parprint(
                 "-------- Solved time t={:.2f}. {} iterations in {:.2f}s".format(self.t, its, time() - current_time))
             if self.output_solutions:
                 self.export(self.t)
             current_time = time()
-        self.pprint("Total simulation time = {}s\n".format(time() - t0_simulation))
+        parprint("Total simulation time = {}s\n".format(time() - t0_simulation))

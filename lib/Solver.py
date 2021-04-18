@@ -1,5 +1,6 @@
 from petsc4py import PETSc
 from mpi4py import MPI
+from lib.Printing import parprint
 from time import perf_counter as time
 
 
@@ -31,16 +32,15 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
 
     if kwargs['monitor']:
         width = 11
-        if _it == 0 and MPI.COMM_WORLD.rank == 0:
-            print("KSP errors: {}, {}, {}, {}, {}, {}".format('abs_s'.rjust(width), 'abs_f'.rjust(
-                width), 'abs_p'.rjust(width), 'rel_s'.rjust(width), 'rel_f'.rjust(width), 'rel_p'.rjust(width)), flush=True)
-        if MPI.COMM_WORLD.rank == 0:
-            print("KSP it {}:   {:.5e}, {:.5e}, {:.5e}, {:.5e}, {:.5e}, {:.5e}".format(
-                _it, res_s_a, res_f_a, res_p_a, res_s_r, res_f_r, res_p_r), flush=True)
+        if _it == 0:
+            parprint("KSP errors: {}, {}, {}, {}, {}, {}".format('abs_s'.rjust(width), 'abs_f'.rjust(
+                width), 'abs_p'.rjust(width), 'rel_s'.rjust(width), 'rel_f'.rjust(width), 'rel_p'.rjust(width)))
+
+        parprint("KSP it {}:   {:.5e}, {:.5e}, {:.5e}, {:.5e}, {:.5e}, {:.5e}".format(
+            _it, res_s_a, res_f_a, res_p_a, res_s_r, res_f_r, res_p_r))
     if error_abs < _ksp.atol or error_rel < _ksp.rtol:
         # Convergence
-        if MPI.COMM_WORLD.rank == 0:
-            print("KSP converged", flush=True)
+        parprint("KSP converged")
         return 1
     elif _it > _ksp.max_it or error_abs > _ksp.divtol:
         # Divergence
@@ -52,17 +52,16 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
 
 class Solver:
     def __init__(self, A, b, PC, parameters, index_map):
-        t0_solver = time()
         self.A = A
         self.b = b
         self.PC = PC
         self.solver = None
         self.parameters = parameters
         self.index_map = index_map
-        if MPI.COMM_WORLD.rank == 0:
-            print("---- Solver set up time = {}s".format(time() - t0_solver), flush=True)
+        self.t_total = 0
 
     def create_solver(self, A, b, PC):
+        t0_create = time()
 
         b = self.b.vec()
         self.dummy = b.copy()
@@ -100,8 +99,10 @@ class Solver:
                 solver.setGMRESRestart(maxiter)
             solver.setFromOptions()
             self.solver = solver
+        parprint("---- [Solver] Solver created in {}s".format(time() - t0_create))
 
     def set_up(self):
+        t0_setup = time()
         # Create linear solver
         solver_type = self.parameters["solver type"]
         atol = self.parameters["solver atol"]
@@ -142,9 +143,16 @@ class Solver:
                               rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
         else:
             self.solver.setConvergenceTest(converged, args, kwargs)
+        parprint("---- [Solver] Solver set up in {}s".format(time() - t0_setup))
 
     def getIterationNumber(self):
         return self.solver.getIterationNumber()
 
     def solve(self, b, x):
+        # No printing, handled by AbstractPhysics
+        t0 = time()
         self.solver.solve(b, x)
+        self.t_total += time() - t0
+
+    def print_timings(self):
+        parprint("\n===== Timing Solver: {:.3f}s".format(self.t_total))

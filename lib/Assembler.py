@@ -1,6 +1,7 @@
 from dolfin import *
 from mpi4py import MPI
 from time import perf_counter as time
+from lib.Printing import parprint
 
 
 class PoromechanicsAssembler:
@@ -170,8 +171,7 @@ class PoromechanicsAssembler:
             a_p = a_p
         assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p, tensor=self.P)
         assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p_diff, tensor=self.P_diff)
-        if MPI.COMM_WORLD.rank == 0:
-            print("---- Assembly A, P time = {}s".format(time() - t0_assemble), flush=True)
+        parprint("---- [Assembler] Assembly A, P time = {}s".format(time() - t0_assemble))
 
     def getMatrix(self):
         """
@@ -219,6 +219,5 @@ class PoromechanicsAssembler:
         # assemble(rhs_s_n + rhs_f_n + rhs_p_n, tensor=self.b)
         assemble(self.adim_s * rhs_s_n + self.adim_f *
                  rhs_f_n + self.adim_p * rhs_p_n, tensor=self.b)
-        if MPI.COMM_WORLD.rank == 0:
-            print("---- Assembly RHS = {}s".format(time() - t0_rhs), flush=True)
+        parprint("---- [Assembler] Assembly RHS = {}s".format(time() - t0_rhs))
         return self.b

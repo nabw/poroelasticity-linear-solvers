@@ -1,10 +1,13 @@
 from petsc4py import PETSc
 from lib.AndersonAcceleration import AndersonAcceleration
+from lib.Printing import parprint
+from time import perf_counter as time
 
 
 class PreconditionerCC(object):
 
     def __init__(self, M, M_diff, index_map, flag_3_way, inner_ksp_type="gmres", inner_pc_type="lu", inner_rtol=1e-6, inner_atol=1e-6, inner_maxiter=1000, inner_monitor=True, w1=1.0, w2=0.1, accel_order=0, bcs_sub_pressure=None):
+        t0_init = time()
         import numpy as np
         self.M = M
         self.M_diff = M_diff
@@ -27,6 +30,14 @@ class PreconditionerCC(object):
         # Used to set pressure bcs on rhs during 3-way
         self.bcs_sub_pressure = bcs_sub_pressure
         self.bc_pressure = np.zeros(len(bcs_sub_pressure))
+        parprint("---- [Preconditioner] Initialize in {}s".format(time() - t0_init))
+
+        # Setup counters
+        self.t_solid = 0
+        self.t_fluid = 0
+        self.t_press = 0
+        self.t_total = 0
+        self.t_alloc = 0
 
     def allocate_temp_vectors(self):
         self.temp_sx = PETSc.Vec().create()
@@ -91,9 +102,14 @@ class PreconditionerCC(object):
 
         if self.inner_pc_type == "hypre":
             PETSc.Options().setValue("-pc_hypre_type", "boomeramg")
-            PETSc.Options().setValue("-pc_hypre_boomeramg_P_max", 4)
-            PETSc.Options().setValue("-pc_hypre_boomeramg_agg_nl", 1)
-            PETSc.Options().setValue("-pc_hypre_boomeramg_agg_num_paths", 2)
+            if mat in (self.Ms_s, self.Mf_f):
+                PETSc.Options().setValue("-pc_hypre_boomeramg_grid_sweeps_all", 5)  # This improves solid a lot
+            PETSc.Options().setValue("-pc_hypre_boomeramg_relax_type_all",
+                                     "symmetric-SOR/Jacobi")
+            if mat != self.Ms_s:
+                PETSc.Options().setValue("-pc_hypre_boomeramg_agg_nl", 1)
+                PETSc.Options().setValue("-pc_hypre_boomeramg_agg_num_paths", 2)
+                PETSc.Options().setValue("-pc_hypre_boomeramg_P_max", 4)
             PETSc.Options().setValue("-pc_hypre_boomeramg_coarsen_type", "HMIS")
             PETSc.Options().setValue("-pc_hypre_boomeramg_interp_type", "ext+i")
             PETSc.Options().setValue("-pc_hypre_boomeramg_no_CF", True)
@@ -108,7 +124,12 @@ class PreconditionerCC(object):
         # Prefer GMRES for saddle point problem with asymmetric preconditioner
         solver.setType("gmres")
         solver.setInitialGuessNonzero(True)
-        solver.setNormType(2)  # 2 unpreconditioned, 1 preconditioned
+        # solver.setNormType(2)  # 2 unpreconditioned, 1 preconditioned
+
+        if self.inner_monitor:
+            PETSc.Options().setValue("-ksp_monitor", None)
+        else:
+            PETSc.Options().setValue("-ksp_monitor_cancel", None)
 
         pc = solver.getPC()
         pc.setType('fieldsplit')
@@ -118,11 +139,12 @@ class PreconditionerCC(object):
         PETSc.Options().setValue("-pc_fieldsplit_ksp_gmres_modifiedgramschmidt", None)
         PETSc.Options().setValue("-pc_fieldsplit_type", "schur")
         PETSc.Options().setValue("-pc_fieldsplit_schur_fact_type", "full")  # diag, full, lower
-        PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "a11")  # selfp (SIMPLE), a11
-        PETSc.Options().setValue("-pc_fieldsplit_ksp_type", self.inner_ksp_type)
-        PETSc.Options().setValue("-pc_fieldsplit_ksp_atol", self.inner_atol)
-        PETSc.Options().setValue("-pc_fieldsplit_ksp_rtol", self.inner_rtol)
-        PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", self.inner_maxiter)
+        PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "selfp")  # selfp (SIMPLE), a11
+        PETSc.Options().setValue("-pc_fieldsplit_ksp_type", "preonly")
+        # PETSc.Options().setValue("-pc_fieldsplit_ksp_atol", 0*self.inner_atol)
+        # PETSc.Options().setValue("-pc_fieldsplit_ksp_rtol", 0*self.inner_rtol)
+        # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", self.inner_maxiter)
+        # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", 5)
         PETSc.Options().setValue("-pc_fieldsplit_pc_type", self.inner_pc_type)
         if self.inner_pc_type == "lu":
             PETSc.Options().setValue("-pc_fieldsplit_pc_factor_mat_solver_type", "mumps")
@@ -143,6 +165,7 @@ class PreconditionerCC(object):
         pc.setFromOptions()
 
     def setUp(self, pc):
+        t0_setup = time()
         # create local ksp and pc contexts
         self.create_solvers()
 
@@ -159,17 +182,21 @@ class PreconditionerCC(object):
             self.setup_elliptic_solver(self.ksp_fp, self.Mfp_fp)
         else:
             self.setup_fieldsplit(self.ksp_fp, self.Mfp_fp)
+        parprint("---- [Preconditioner] Set up in {}s".format(time() - t0_setup))
 
     def apply(self, pc, x, y):
+        t_total = time()
         # Result is y = A^{-1}x
 
+        t0_alloc = time()
         y.getSubVector(self.is_s, self.temp_sy)
         x.getSubVector(self.is_s, self.temp_sx)
+        self.t_alloc += time() - t0_alloc
 
-        # TODO: use mult to avoid creating temp vectors for off-diagonal contributions
         if self.flag_3_way:
 
             # Extract subvectors
+            t0_alloc = time()
             x.getSubVector(self.is_s, self.temp2_sx)
             x.getSubVector(self.is_s, self.temp3_sx)
             x.getSubVector(self.is_f, self.temp_fx)
@@ -182,16 +209,20 @@ class PreconditionerCC(object):
             y.getSubVector(self.is_f, self.temp_f_diffy)
             y.getSubVector(self.is_p, self.temp_py)
             y.getSubVector(self.is_p, self.temp_p_diffy)
+            self.t_alloc += time() - t0_alloc
 
             # Solve both pressures first
+            t_p = time()
             self.ksp_p.solve(self.temp_px, self.temp_py)
             # Apply bc to pressure rhs first
             self.temp_p_diffx.setValues(self.bcs_sub_pressure, self.bc_pressure)
             self.temp_p_diffx.assemble()
             self.ksp_p_diff.solve(self.temp_p_diffx, self.temp_p_diffy)
+            self.t_press += time() - t_p
 
             # Then fluids
             # FS
+            t_f = time()
             self.Mf_p.mult(self.temp_py, self.temp2_fx)
             self.temp2_fx.aypx(-1, self.temp_fx)
             self.ksp_f.solve(self.temp2_fx, self.temp_fy)
@@ -199,9 +230,11 @@ class PreconditionerCC(object):
             self.Mf_p.mult(self.temp_p_diffy, self.temp2_fx)
             self.temp2_fx.aypx(-1, self.temp_fx)
             self.ksp_f.solve(self.temp2_fx, self.temp_f_diffy)
+            self.t_fluid += time() - t_f
 
             # Finally solids
             # FS
+            t_s = time()
             self.Ms_f.mult(self.temp_fy, self.temp2_sx)
             self.Ms_p.mult(self.temp_py, self.temp3_sx)
             self.temp2_sx.axpy(1, self.temp3_sx)  # temp2 + temp3
@@ -213,8 +246,10 @@ class PreconditionerCC(object):
             self.temp2_sx.axpy(1, self.temp3_sx)  # temp2 + temp3
             self.temp2_sx.aypx(-1, self.temp_sx)
             self.ksp_s.solve(self.temp2_sx, self.temp_s_diffy)
+            self.t_solid += time() - t_s
 
             # Weighted CC sum
+            t0_alloc = time()
             self.temp_py.scale(self.w1)
             self.temp_fy.scale(self.w1)
             self.temp_sy.scale(self.w1)
@@ -226,23 +261,45 @@ class PreconditionerCC(object):
             x.restoreSubVector(self.is_p, self.temp_px)
             y.restoreSubVector(self.is_f, self.temp_fy)
             y.restoreSubVector(self.is_p, self.temp_py)
+            self.t_alloc += time() - t0_alloc
         else:  # use 2way
+            t_s = time()
             self.ksp_s.solve(self.temp_sx, self.temp_sy)
+            self.t_solid += time() - t_s
+
+            t0_alloc = time()
             x.getSubVector(self.is_fp, self.temp_fpx)
             x.getSubVector(self.is_fp, self.temp2_fpx)
             y.getSubVector(self.is_fp, self.temp_fpy)
+            self.t_alloc += time() - t0_alloc
 
             # compute A_fp_s ys, ys resulting vector from before
+            t_fp = time()
             self.Mfp_s.mult(self.temp_sy, self.temp2_fpx)
             self.temp2_fpx.aypx(-1, self.temp_fpx)
             self.ksp_fp.solve(self.temp2_fpx, self.temp_fpy)
+            self.t_fluid += time() - t_fp
+            self.t_press += time() - t_fp
+
+            t0_alloc = time()
             x.restoreSubVector(self.is_fp, self.temp_fpx)
             y.restoreSubVector(self.is_fp, self.temp_fpy)
+            self.t_alloc += time() - t0_alloc
 
+        t0_alloc = time()
         x.restoreSubVector(self.is_s, self.temp_sx)
         y.restoreSubVector(self.is_s, self.temp_sy)
+        self.t_alloc += time() - t0_alloc
 
-        self.anderson.get_next_vector(y)
+        if self.anderson.order > 0:
+            self.anderson.get_next_vector(y)
+        self.t_total += time() - t_total
+
+    def print_timings(self):
+        parprint("\n===== Timing preconditioner: {:.3f}s".format(self.t_total))
+        parprint("\tSolid solver: {:.3f}s\n\tFluid solver: {:.3f}s\n\tPressure solver: {:.3f}s".format(
+            self.t_solid, self.t_fluid, self.t_press))
+        parprint("\n\tAllocation time: {:.3f}".format(self.t_alloc))
 
 
 class Preconditioner:
@@ -268,9 +325,13 @@ class Preconditioner:
         flag_3_way = self.pc_type == "diagonal 3-way"
         ctx = PreconditionerCC(self.P.mat(), self.P_diff.mat(), self.index_map, flag_3_way, self.inner_ksp_type,
                                self.inner_pc_type, self.inner_rtol, self.inner_atol, self.inner_maxiter, self.inner_monitor, 1.0, 0.1, self.inner_accel_order, self.bcs_sub_pressure)
-        pc = PETSc.PC().create()
-        pc.setType('python')
-        pc.setPythonContext(ctx)
-        pc.setOperators(self.A.mat())
-        pc.setUp()
-        return pc
+        self.pc = PETSc.PC().create()
+        self.pc.setType('python')
+        self.pc.setPythonContext(ctx)
+        self.pc.setOperators(self.A.mat())
+        self.pc.setUp()
+        return self.pc
+
+    def print_timings(self):
+        ctx = self.pc.getPythonContext()
+        ctx.print_timings()
