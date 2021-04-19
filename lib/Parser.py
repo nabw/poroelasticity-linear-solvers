@@ -13,6 +13,8 @@ class Parser:
         # Add real options
         parser.add_option("-N", "--Nelements", type="int", dest="N",
                           help="Number of elements per side")
+        parser.add_option("--N-refinements", type="int", dest="refinements",
+                          help="Number of mesh refinements")
         parser.add_option("--solver-type", type="str", dest="solver_type",
                           help="Type of linear solver: gmres, cg, aar")
         parser.add_option("--pc-type", type="str", dest="pc_type",
@@ -34,6 +36,8 @@ class Parser:
         options_dict = {}  # Empty dictionary
         if options.N:
             options_dict["N"] = options.N
+        if options.refinements:
+            options_dict["mesh refinements"] = options.refinements
         if options.solver_type:
             options_dict["solver type"] = options.solver_type
         if options.pc_type:

@@ -3,24 +3,26 @@ from lib.Assembler import PoromechanicsAssembler
 from lib.IndexSet import IndexSet
 from lib.Solver import Solver
 from lib.Printing import parprint
+from mpi4py import MPI
 import dolfin as df
 
 
 class Poromechanics(AbstractPhysics):
     def __init__(self, parameters, mesh, parser):
         super().__init__(parameters, mesh, parser)
-        V = df.FunctionSpace(mesh,
-                             df.MixedElement(df.VectorElement('CG', mesh.ufl_cell(), parameters["fe degree solid"]),
-                                             df.VectorElement('CG', mesh.ufl_cell(),
+        V = df.FunctionSpace(self.mesh,
+                             df.MixedElement(df.VectorElement('CG', self.mesh.ufl_cell(), parameters["fe degree solid"]),
+                                             df.VectorElement('CG', self.mesh.ufl_cell(),
                                                               parameters["fe degree fluid"]),
-                                             df.FiniteElement('CG', mesh.ufl_cell(), parameters["fe degree pressure"])))
+                                             df.FiniteElement('CG', self.mesh.ufl_cell(), parameters["fe degree pressure"])))
         self.V = V
         self.two_way = True
         if self.parameters["pc type"] == "diagonal 3-way":
             self.two_way = False
-        self.index_map = IndexSet(V, self.two_way)
-        parprint("---- Problem dofs={}".format(V.dim()))
+        parprint("---- Problem dofs={}, solving with {} procs".format(V.dim(), MPI.COMM_WORLD.size))
         self.assembler = PoromechanicsAssembler(parameters, V)
+
+        self.index_map = IndexSet(V, self.two_way)
         # Start by assembling system matrices
         self.assembler.assemble()
 

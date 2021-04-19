@@ -13,6 +13,7 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
     index_map = kwargs['index_map']
     dummy_s, dummy_f, dummy_p = kwargs['dummy_subs']
     b0_s,  b0_f, b0_p = kwargs['b0_norms']
+    normalize = max(b0_s,  b0_f, b0_p)
     _ksp.buildResidual(dummy)
 
     # Get residual subcomponents
@@ -21,11 +22,11 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
     dummy.getSubVector(index_map.is_p, dummy_p)
 
     res_s_a = dummy_s.norm(PETSc.NormType.NORM_INFINITY)
-    res_s_r = res_s_a/b0_s
+    res_s_r = res_s_a/normalize  # /b0_s
     res_f_a = dummy_f.norm(PETSc.NormType.NORM_INFINITY)
-    res_f_r = res_f_a/b0_f
+    res_f_r = res_f_a/normalize  # /b0_f
     res_p_a = dummy_p.norm(PETSc.NormType.NORM_INFINITY)
-    res_p_r = res_p_a/b0_p
+    res_p_r = res_p_a/normalize  # /b0_p
 
     error_abs = max(res_s_a, res_f_a, res_p_a)
     error_rel = max(res_s_r, res_f_r, res_p_r)
@@ -40,7 +41,7 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
             _it, res_s_a, res_f_a, res_p_a, res_s_r, res_f_r, res_p_r))
     if error_abs < _ksp.atol or error_rel < _ksp.rtol:
         # Convergence
-        parprint("KSP converged")
+        parprint("---- [Solver] Converged")
         return 1
     elif _it > _ksp.max_it or error_abs > _ksp.divtol:
         # Divergence
@@ -94,6 +95,7 @@ class Solver:
             solver.setOperators(self.A.mat())
             solver.setType(self.parameters["solver type"])
             solver.setTolerances(rtol, atol, 1e20, maxiter)
+            PETSc.Options().setValue("-ksp_gmres_modifiedgramschmidt", None)
             solver.setPC(self.PC)
             if solver_type == "gmres":
                 solver.setGMRESRestart(maxiter)

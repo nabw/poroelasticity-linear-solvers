@@ -16,7 +16,7 @@ class AbstractPhysics:
         self.parameters = parameters
         self.parameters.update(parser.options_dict)
         self.mesh = mesh
-        self.dim = mesh.topology().dim()
+        self.dim = self.mesh.topology().dim()
 
         # First assert that all required variables are in the parameters dictionary
         required_fields = ["t0", "tf", "dt", "output name"]

@@ -1,5 +1,5 @@
 from dolfin import *
-from lib.MeshCreation import generate_square
+from lib.MeshCreation import generate_square, generate_boundary_measure
 from lib.Poromechanics import Poromechanics
 from lib.Parser import Parser
 from time import time
@@ -9,75 +9,20 @@ parameters["mesh_partitioner"] = "ParMETIS"
 initial_time = time()
 parser = Parser()
 Nelements = 10
+refinements = 0
 if parser.options.N:
     Nelements = parser.options.N
+if parser.options.refinements:
+    refinements = parser.options.refinements
 length = 64
-mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE = generate_square(
-    Nelements, length)
+mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE = generate_footing_square(
+    Nelements, length, refinements)
 
-# Refine on top
-
-
-def refine_mesh(mesh):
-    cell_markers = MeshFunction('bool', mesh, mesh.topology().dim())
-    cell_markers.set_all(False)
-    for c in cells(mesh):
-        verts = np.reshape(c.get_vertex_coordinates(), (3, 2))
-        verts_x = verts[:, 0]
-        verts_y = verts[:, 1]
-        newval = verts_y.min() > 2 * length / 3 and verts_x.min() > length / \
-            8 and verts_x.max() < 7 / 8 * length
-        cell_markers[c] = newval
-
-    # Redefine markers on new mesh
-    return refine(mesh, cell_markers)
-
-
-mesh = refine_mesh(refine_mesh(mesh))
-
-# Everything by hand due to markers
-
-
-class Left(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[0], 0.0) and on_boundary
-
-
-class Right(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[0], length) and on_boundary
-
-
-class Top(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[1], length) and on_boundary
-
-
-class Bottom(SubDomain):
-    def inside(self, x, on_boundary):
-        return near(x[1], 0.0) and on_boundary
-
-
-left, right, top, bottom = Left(), Right(), Top(), Bottom()
-LEFT, RIGHT, TOP, BOTTOM = 1, 2, 3, 4  # Set numbering
-NONE = 99  # Marker for empty boundary
-
-markers = MeshFunction("size_t", mesh, 1)
-markers.set_all(0)
-
-boundaries = (left, right, top, bottom)
-def_names = (LEFT, RIGHT, TOP, BOTTOM)
-for side, num in zip(boundaries, def_names):
-    side.mark(markers, num)
 
 neumann_solid_markers = [TOP]  # All others get weakly 0'd.
 neumann_fluid_markers = []
-
-ds = Measure('ds', domain=mesh, subdomain_data=markers,
-             metadata={'optimize': True})
-dx = dx(mesh)
-dsNs = sum([ds(i) for i in neumann_solid_markers], ds(NONE))
-dsNf = sum([ds(i) for i in neumann_fluid_markers], ds(NONE))
+dsNs = generate_boundary_measure(mesh, markers, neumann_solid_markers)
+dsNf = generate_boundary_measure(mesh, markers, neumann_fluid_markers)
 
 # Set up load terms
 fs_vol = ff_vol = fs_sur = lambda t: Constant((0., 0.))

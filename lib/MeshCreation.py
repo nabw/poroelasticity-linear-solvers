@@ -8,14 +8,15 @@ Created on Fri Feb 22 14:06:24 2019
 NONE = 99  # Marker for empty boundary
 
 
-def generate_square(Nelements, length):
+def generate_square(Nelements, length, refinements=0):
     """
     Creates a square mesh of given elements and length with markers on
     the sides: left, bottom, right and top
     """
-    from dolfin import UnitSquareMesh, SubDomain, MeshFunction, Measure, near
+    from dolfin import UnitSquareMesh, SubDomain, MeshFunction, Measure, near, refine
     mesh = UnitSquareMesh(Nelements, Nelements)
-    # Rescale for Chapelle-Moireau comparison
+    for i in range(refinements):
+        mesh = refine(mesh)
     mesh.coordinates()[:] *= length
 
     # Subdomains: Solid
@@ -46,6 +47,59 @@ def generate_square(Nelements, length):
     for side, num in zip(boundaries, def_names):
         side.mark(markers, num)
 
+    return mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE
+
+
+def generate_footing_square(Nelements, length, refinements=0):
+    from dolfin import UnitSquareMesh, SubDomain, MeshFunction, Measure, near, refine
+    # Start from square
+    mesh = generate_square(Nelements, length, 0)[0]
+
+    def refine_mesh(mesh):
+        # Refine on top
+        cell_markers = MeshFunction('bool', mesh, mesh.topology().dim())
+        cell_markers.set_all(False)
+        for c in cells(mesh):
+            verts = np.reshape(c.get_vertex_coordinates(), (3, 2))
+            verts_x = verts[:, 0]
+            verts_y = verts[:, 1]
+            newval = verts_y.min() > 2 * length / 3 and verts_x.min() > length / \
+                8 and verts_x.max() < 7 / 8 * length
+            cell_markers[c] = newval
+
+        # Redefine markers on new mesh
+        return refine(mesh, cell_markers)
+
+    mesh = refine_mesh(refine_mesh(mesh))
+
+    for i in range(refinements):
+        mesh = refine(mesh)
+
+    class Left(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[0], 0.0) and on_boundary
+
+    class Right(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[0], length) and on_boundary
+
+    class Top(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[1], length) and on_boundary
+
+    class Bottom(SubDomain):
+        def inside(self, x, on_boundary):
+            return near(x[1], 0.0) and on_boundary
+
+    left, right, top, bottom = Left(), Right(), Top(), Bottom()
+    LEFT, RIGHT, TOP, BOTTOM = 1, 2, 3, 4  # Set numbering
+    markers = MeshFunction("size_t", mesh, 1)
+    markers.set_all(0)
+
+    boundaries = (left, right, top, bottom)
+    def_names = (LEFT, RIGHT, TOP, BOTTOM)
+    for side, num in zip(boundaries, def_names):
+        side.mark(markers, num)
     return mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE
 
 
@@ -111,14 +165,15 @@ def prolateGeometry(filename):
     return mesh, markers, ENDOCARD, EPICARD, BASE, NONE
 
 
-def generate_cube(Nelements, length):
+def generate_cube(Nelements, length, refinements=0):
     """
     Creates a square mesh of given elements and length with markers on
     the sides: left, bottom, right and top
     """
-    from dolfin import UnitCubeMesh, SubDomain, MeshFunction, Measure, near
+    from dolfin import UnitCubeMesh, SubDomain, MeshFunction, Measure, near, refine
     mesh = UnitCubeMesh(Nelements, Nelements, Nelements)
-    # Rescale for Chapelle-Moireau comparison
+    for i in range(refinements):
+        mesh = refine(mesh)
     mesh.coordinates()[:] *= length
 
     # Subdomains: Solid
@@ -159,7 +214,7 @@ def generate_cube(Nelements, length):
     return mesh, markers, XP, XM, YP, YM, ZP, ZM
 
 
-def generateBoundaryMeasure(mesh, markers, tags_list, none_tag=99):
+def generate_boundary_measure(mesh, markers, tags_list, none_tag=99):
     from dolfin import Measure
 
     ds = Measure('ds', domain=mesh, subdomain_data=markers,

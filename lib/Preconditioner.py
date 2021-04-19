@@ -30,7 +30,6 @@ class PreconditionerCC(object):
         # Used to set pressure bcs on rhs during 3-way
         self.bcs_sub_pressure = bcs_sub_pressure
         self.bc_pressure = np.zeros(len(bcs_sub_pressure))
-        parprint("---- [Preconditioner] Initialize in {}s".format(time() - t0_init))
 
         # Setup counters
         self.t_solid = 0
@@ -84,7 +83,6 @@ class PreconditionerCC(object):
         solver.setOperators(mat, mat)
         solver.setType(self.inner_ksp_type)
         solver.setInitialGuessNonzero(True)
-        # solver.setNormType(2)  # 2 unpreconditioned, 1 preconditioned
         pc = solver.getPC()
         pc.setType(self.inner_pc_type)
 
@@ -141,15 +139,18 @@ class PreconditionerCC(object):
         PETSc.Options().setValue("-pc_fieldsplit_schur_fact_type", "full")  # diag, full, lower
         PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "selfp")  # selfp (SIMPLE), a11
         PETSc.Options().setValue("-pc_fieldsplit_ksp_type", "preonly")
+        # PETSc.Options().setValue("-pc_fieldsplit_ksp_type", self.inner_ksp_type)
         # PETSc.Options().setValue("-pc_fieldsplit_ksp_atol", 0*self.inner_atol)
         # PETSc.Options().setValue("-pc_fieldsplit_ksp_rtol", 0*self.inner_rtol)
+        # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", 3)
         # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", self.inner_maxiter)
-        # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", 5)
         PETSc.Options().setValue("-pc_fieldsplit_pc_type", self.inner_pc_type)
         if self.inner_pc_type == "lu":
             PETSc.Options().setValue("-pc_fieldsplit_pc_factor_mat_solver_type", "mumps")
         if self.inner_pc_type == "hypre":
             # Kirby, Mitchell (2017).
+            PETSc.Options().setValue("-pc_hypre_boomeramg_relax_type_all",
+                                     "symmetric-SOR/Jacobi")
             PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_type", "boomeramg")
             PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_P_max", 4)
             PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_agg_nl", 1)

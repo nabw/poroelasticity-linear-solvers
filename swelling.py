@@ -1,5 +1,5 @@
 from dolfin import *
-from lib.MeshCreation import generate_square
+from lib.MeshCreation import generate_square, generate_boundary_measure
 from lib.Poromechanics import Poromechanics
 from lib.Parser import Parser
 from time import time
@@ -10,20 +10,20 @@ parameters["mesh_partitioner"] = "ParMETIS"
 initial_time = time()
 parser = Parser()
 Nelements = 10
+refinements = 0
 if parser.options.N:
     Nelements = parser.options.N
+if parser.options.refinements:
+    refinements = parser.options.refinements
 side_length = 1e-2
 mesh, markers, LEFT, RIGHT, TOP, BOTTOM, NONE = generate_square(
-    Nelements, side_length)
+    Nelements, side_length, refinements)
 
 
 neumann_solid_markers = [TOP, RIGHT]
 neumann_fluid_markers = [LEFT]
-
-ds = Measure('ds', domain=mesh, subdomain_data=markers,
-             metadata={'optimize': True})
-dsNs = sum([ds(i) for i in neumann_solid_markers], ds(NONE))
-dsNf = sum([ds(i) for i in neumann_fluid_markers], ds(NONE))
+dsNs = generate_boundary_measure(mesh, markers, neumann_solid_markers)
+dsNf = generate_boundary_measure(mesh, markers, neumann_fluid_markers)
 
 # Set up load terms
 fs_vol = ff_vol = fs_sur = lambda t: Constant((0., 0.))

@@ -2,10 +2,13 @@ from petsc4py import PETSc
 from mpi4py import MPI
 import numpy as np
 from itertools import chain
+from time import perf_counter as time
+from lib.Printing import parprint
 
 
 class IndexSet:
     def __init__(self, V, two_way=True):
+        t0 = time()
         # Keep sub dimensions
         self.ns = V.sub(0).dim()
         self.nf = V.sub(1).dim()
@@ -44,6 +47,7 @@ class IndexSet:
         self.is_f = PETSc.IS().createGeneral(self.dofmap_f)
         self.is_p = PETSc.IS().createGeneral(self.dofmap_p)
         self.is_fp = PETSc.IS().createGeneral(self.dofmap_fp)
+        parprint("---- [Indexes] computed local indices in {:.3f}s".format(time() - t0))
 
     def get_dimensions(self):
         return self.ns, self.nf, self.np
