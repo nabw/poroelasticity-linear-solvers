@@ -1,0 +1,90 @@
+# Global solver params, using the given one as example
+#-global_ksp_type gmres
+#-global_ksp_atol 0
+#-global_ksp_rtol 0
+-global_ksp_monitor
+
+# Start with solid solver params
+#-s_ksp_monitor
+-s_ksp_type gmres
+-s_ksp_atol 0.0
+-s_ksp_rtol 1e-4
+-s_pc_type hypre
+-s_pc_hypre_type boomeramg
+-s_pc_hypre_boomeramg_P_max 4
+-s_pc_hypre_boomeramg_grid_sweeps_all 1
+-s_pc_hypre_boomeramg_agg_nl 1
+-s_pc_hypre_boomeramg_agg_num_paths 2
+-s_pc_hypre_boomeramg_coarsen_type HMIS
+-s_pc_hypre_boomeramg_interp_type ext+i
+-s_pc_hypre_boomeramg_no_CF true
+-s_pc_hypre_boomeramg_grid_sweeps_all 2
+
+# Fluid solver
+#-f_ksp_monitor
+-f_ksp_type preonly
+-f_ksp_atol 0.0
+-f_ksp_rtol 1e-4
+-f_pc_type hypre
+-f_pc_hypre_type boomeramg
+-f_pc_hypre_boomeramg_grid_sweeps_all 1
+-f_pc_hypre_boomeramg_P_max 4
+-f_pc_hypre_boomeramg_agg_nl 1
+-f_pc_hypre_boomeramg_agg_num_paths 2
+-f_pc_hypre_boomeramg_coarsen_type HMIS
+-f_pc_hypre_boomeramg_interp_type ext+i
+-f_pc_hypre_boomeramg_no_CF true
+
+# Pressure solver
+#-p_ksp_monitor
+-p_ksp_type preonly
+-p_pc_type hypre
+-p_pc_hypre_type boomeramg
+-p_pc_hypre_boomeramg_P_max 4
+-p_pc_hypre_boomeramg_agg_nl 1
+-p_pc_hypre_boomeramg_agg_num_paths 2
+-p_pc_hypre_boomeramg_coarsen_type HMIS
+-p_pc_hypre_boomeramg_interp_type ext+i
+-p_pc_hypre_boomeramg_no_CF true
+
+# Pressure diff solver
+-diff_ksp_type preonly
+-diff_pc_type hypre
+-diff_pc_hypre_type boomeramg
+-diff_pc_hypre_boomeramg_P_max 4
+-diff_pc_hypre_boomeramg_agg_nl 1
+-diff_pc_hypre_boomeramg_agg_num_paths 2
+-diff_pc_hypre_boomeramg_coarsen_type HMIS
+-diff_pc_hypre_boomeramg_interp_type ext+i
+-diff_pc_hypre_boomeramg_no_CF true
+
+# FP fieldsplit solver
+#-fp_ksp_monitor
+-fp_ksp_type gmres
+-fp_ksp_rtol 1e-4
+-fp_ksp_gmres_modifiedgramschmidt
+-fp_pc_fieldsplit_type schur
+-fp_pc_fieldsplit_schur_fact_type lower
+-fp_pc_fieldsplit_schur_precondition selfp
+# U solver
+-fp_fieldsplit_0_ksp_type preonly
+-fp_fieldsplit_0_pc_type hypre
+-fp_fieldsplit_0_pc_hypre_type boomeramg
+-fp_fieldsplit_0_pc_hypre_boomeramg_P_max 4
+-fp_fieldsplit_0_pc_hypre_boomeramg_grid_sweeps_all 2
+-fp_fieldsplit_0_pc_hypre_boomeramg_agg_nl 1
+-fp_fieldsplit_0_pc_hypre_boomeramg_agg_num_paths 2
+-fp_fieldsplit_0_pc_hypre_boomeramg_coarsen_type HMIS
+-fp_fieldsplit_0_pc_hypre_boomeramg_interp_type ext+i
+-fp_fieldsplit_0_pc_hypre_boomeramg_no_CF true
+# SCHUR
+-fp_fieldsplit_1_ksp_type preonly
+-fp_fieldsplit_1_pc_type hypre
+-fp_fieldsplit_1_pc_hypre_type boomeramg
+-fp_fieldsplit_1_pc_hypre_boomeramg_grid_sweeps_all 10
+-fp_fieldsplit_1_pc_hypre_boomeramg_P_max 4
+-fp_fieldsplit_1_pc_hypre_boomeramg_agg_nl 1
+-fp_fieldsplit_1_pc_hypre_boomeramg_agg_num_paths 2
+-fp_fieldsplit_1_pc_hypre_boomeramg_coarsen_type HMIS
+-fp_fieldsplit_1_pc_hypre_boomeramg_interp_type ext+i
+-fp_fieldsplit_1_pc_hypre_boomeramg_no_CF true
