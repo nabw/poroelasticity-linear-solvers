@@ -1,5 +1,5 @@
 from dolfin import *
-from lib.MeshCreation import generate_square, generate_boundary_measure
+from lib.MeshCreation import generate_footing_square, generate_boundary_measure
 from lib.Poromechanics import Poromechanics
 from lib.Parser import Parser
 from time import time

@@ -51,7 +51,8 @@ def generate_square(Nelements, length, refinements=0):
 
 
 def generate_footing_square(Nelements, length, refinements=0):
-    from dolfin import UnitSquareMesh, SubDomain, MeshFunction, Measure, near, refine
+    from dolfin import UnitSquareMesh, SubDomain, MeshFunction, Measure, near, refine, cells
+    import numpy as np
     # Start from square
     mesh = generate_square(Nelements, length, 0)[0]
 

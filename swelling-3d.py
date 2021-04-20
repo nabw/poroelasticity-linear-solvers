@@ -26,14 +26,18 @@ dsNs = generate_boundary_measure(mesh, markers, neumann_solid_markers)
 dsNf = generate_boundary_measure(mesh, markers, neumann_fluid_markers)
 
 # Set up load terms
-fs_vol = ff_vol = fs_sur = lambda t: Constant((0., 0., 0.))
+fs_vol = ff_vol = lambda t: Constant((0., 0., 0.))
 
 
 def p_source(t): return Constant(0.0)
 
 
 def ff_sur(t):
-    return Constant(-1e3 * (1 - exp(-(t**2) / 0.25))) * FacetNormal(mesh)
+    return Constant(-1e3 * 0.1 * (1 - exp(-(t**2) / 0.25))) * FacetNormal(mesh)
+
+
+def fs_sur(t):
+    return Constant(-1e3 * 0.9 * (1 - exp(-(t**2) / 0.25))) * FacetNormal(mesh)
 
 
 parameters = {"mu_f": 0.035,
