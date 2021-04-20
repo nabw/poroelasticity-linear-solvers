@@ -26,7 +26,7 @@ dsNs = generate_boundary_measure(mesh, markers, neumann_solid_markers)
 dsNf = generate_boundary_measure(mesh, markers, neumann_fluid_markers)
 
 # Set up load terms
-fs_vol = ff_vol = fs_sur = lambda t: Constant((0., 0.))
+fs_vol = ff_vol = lambda t: Constant((0., 0.))
 
 
 def p_source(t): return Constant(0.0)
@@ -36,13 +36,17 @@ def ff_sur(t):
     return Constant(-1e3 * 0.1 * (1 - exp(-(t**2) / 0.25))) * FacetNormal(mesh)
 
 
+def fs_sur(t):
+    return Constant(-1e3 * 0.9 * (1 - exp(-(t**2) / 0.25))) * FacetNormal(mesh)
+
+
 parameters = {"mu_f": 0.035,
               "rhof": 1e3,
               "rhos": 1e3,
               "phi0": 0.1,
               "mu_s": 4000,
               "lmbda": 700,
-              "ks": 1e8,
+              "ks": 1e6,
               "kf": 1e-7,
               "dt": 0.1,
               "t0": 0.0,
@@ -56,14 +60,14 @@ parameters = {"mu_f": 0.035,
               "betas": -0.5,
               "betaf": 0.,
               "betap": 1.,
-              "solver atol": 1e-6,
+              "solver atol": 1e-8,
               "solver rtol": 1e-6,
               "solver maxiter": 100,
               "solver monitor": False,
               "solver type": "gmres",  # cg, gmres, aar
               "pc type": "diagonal",  # diagonal, undrained, diagonal 3-way
               "inner ksp type": "gmres",  # preonly, gmres, cg, bicgstab,
-              "inner pc type": "lu",  # bjacobi, ilu, hypre, lu, gamg, asm
+              "inner pc type": "hypre",  # bjacobi, ilu, hypre, lu, gamg, asm
               "inner atol": 0,
               "inner rtol": 1e-6,
               "inner maxiter": 1000,

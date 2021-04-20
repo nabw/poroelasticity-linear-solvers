@@ -171,6 +171,7 @@ class PoromechanicsAssembler:
             a_p = a_p
         assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p, tensor=self.P)
         assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p_diff, tensor=self.P_diff)
+
         parprint("---- [Assembler] Assembly A, P time = {}s".format(time() - t0_assemble))
 
     def getMatrix(self):

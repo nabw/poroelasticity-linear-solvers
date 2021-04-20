@@ -1,4 +1,5 @@
 from optparse import OptionParser
+from petsc4py import PETSc
 
 
 class Parser:
@@ -23,13 +24,16 @@ class Parser:
                           help="Finite element degree of solid")
         parser.add_option("--monitor", action="store_true", dest="monitor",
                           help="Monitor linear solver convergence")
+        parser.add_option("--inner-monitor", action="store_true", dest="inner_monitor",
+                          help="Monitor convergence of preconditioner solvers")
         parser.add_option("--inner-accel-order", type="int", dest="inner_accel_order",
                           help="Order of inner Anderson acceleration")
         parser.add_option("--output", action="store_true", dest="output",
                           help="Use this to activate solution export")
         parser.add_option("--time-final", type="float", dest="tf",
                           help="Time to end simulation")
-        parser.add_option
+        parser.add_option("--petsc-options", type="str", dest="options_file",
+                          help="PETSc options file")
 
         options, _ = parser.parse_args()
 
@@ -46,11 +50,26 @@ class Parser:
             options_dict["fe degree solid"] = options.fe_s
         if options.monitor:
             options_dict["solver monitor"] = True
+        if options.inner_monitor:
+            options_dict["inner monitor"] = True
         if options.inner_accel_order:
             options_dict["inner accel order"] = options.inner_accel_order
         if options.output:
             options_dict["output solutions"] = True
         if options.tf:
             options_dict["tf"] = options.tf
+        if options.options_file:
+            with open(options.options_file, "r") as opts_file:
+                lines = opts_file.readlines()
+                for _line in lines:
+                    line = _line.rstrip().lstrip()  # Remove trailing and leading whitespace
+                    if "#" in line or len(line) == 0:  # Skip comment lines
+                        continue
+                    split = line.split(" ")
+                    if len(split) > 1:
+                        key, val = split[0], split[-1]  # In case there is more than one space
+                        PETSc.Options().setValue(key, val)
+                    else:
+                        PETSc.Options().setValue(line, None)
         self.options_dict = options_dict
         self.options = options

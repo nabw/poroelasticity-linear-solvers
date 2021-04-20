@@ -33,11 +33,13 @@ class IndexSet:
             # Then find the corresponding local indexex in f-p subspace
             dofs_f = []
             dofs_p = []
-            for i, dof in enumerate(dofs_fp_global):
+            i = 0
+            for dof in dofs_fp_global:
                 if dof in self.dofmap_f:
                     dofs_f.append(i)
                 elif dof in self.dofmap_p:
                     dofs_p.append(i)
+                i = i + 1
             # Replace global dofmaps with f-p dofmaps
             self.dofmap_f = dofs_f
             self.dofmap_p = dofs_p

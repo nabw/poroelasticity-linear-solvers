@@ -73,23 +73,27 @@ class PreconditionerCC(object):
 
     def create_solvers(self):
         self.ksp_s = PETSc.KSP().create()
+        self.ksp_s.setOptionsPrefix("s_")
         self.ksp_f = PETSc.KSP().create()
+        self.ksp_f.setOptionsPrefix("f_")
         self.ksp_p = PETSc.KSP().create()
+        self.ksp_p.setOptionsPrefix("p_")
         self.ksp_fp = PETSc.KSP().create()
+        self.ksp_fp.setOptionsPrefix("fp_")
         self.ksp_p_diff = PETSc.KSP().create()
+        self.ksp_p_diff.setOptionsPrefix("diff_")
         self.ksps_elliptic = (self.ksp_s, self.ksp_f, self.ksp_p, self.ksp_p_diff)
 
     def setup_elliptic_solver(self, solver, mat):
         solver.setOperators(mat, mat)
         solver.setType(self.inner_ksp_type)
-        solver.setInitialGuessNonzero(True)
         pc = solver.getPC()
         pc.setType(self.inner_pc_type)
 
-        if self.inner_monitor:
-            PETSc.Options().setValue("-ksp_monitor", None)
-        else:
-            PETSc.Options().setValue("-ksp_monitor_cancel", None)
+        # if self.inner_monitor:
+        #     PETSc.Options().setValue("-ksp_monitor", None)
+        # else:
+        #     PETSc.Options().setValue("-ksp_monitor_cancel", None)
 
         if self.inner_ksp_type != "preonly":
             solver.setTolerances(self.inner_rtol, self.inner_atol, 1e20, self.inner_maxiter)
@@ -114,8 +118,8 @@ class PreconditionerCC(object):
 
         if self.inner_pc_type == "gamg":
             pc.setGAMGSmooths(1)
-        solver.setFromOptions()
         pc.setFromOptions()
+        solver.setFromOptions()
 
     def setup_fieldsplit(self, solver, mat):
         solver.setOperators(mat, mat)
@@ -124,46 +128,50 @@ class PreconditionerCC(object):
         solver.setInitialGuessNonzero(True)
         # solver.setNormType(2)  # 2 unpreconditioned, 1 preconditioned
 
-        if self.inner_monitor:
-            PETSc.Options().setValue("-ksp_monitor", None)
-        else:
-            PETSc.Options().setValue("-ksp_monitor_cancel", None)
+        # if self.inner_monitor:
+        #     PETSc.Options().setValue("-ksp_monitor", None)
+        # else:
+        #     PETSc.Options().setValue("-ksp_monitor_cancel", None)
 
         pc = solver.getPC()
         pc.setType('fieldsplit')
-        pc.setFieldSplitIS(("uf", self.is_f))
-        pc.setFieldSplitIS(("p", self.is_p))
+        pc.setFieldSplitIS((None, self.is_f))
+        pc.setFieldSplitIS((None, self.is_p))
         # Kirby, Mitchell (2017).
-        PETSc.Options().setValue("-pc_fieldsplit_ksp_gmres_modifiedgramschmidt", None)
-        PETSc.Options().setValue("-pc_fieldsplit_type", "schur")
-        PETSc.Options().setValue("-pc_fieldsplit_schur_fact_type", "full")  # diag, full, lower
-        PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "selfp")  # selfp (SIMPLE), a11
-        PETSc.Options().setValue("-pc_fieldsplit_ksp_type", "preonly")
+        # PETSc.Options().setValue("-pc_fieldsplit_ksp_gmres_modifiedgramschmidt", None)
+        # PETSc.Options().setValue("-pc_fieldsplit_type", "schur")
+        # PETSc.Options().setValue("-pc_fieldsplit_schur_fact_type", "full")  # diag, full, lower
+        # PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "selfp")  # selfp (SIMPLE), a11
+        # PETSc.Options().setValue("-pc_fieldsplit_ksp_type", "preonly")
         # PETSc.Options().setValue("-pc_fieldsplit_ksp_type", self.inner_ksp_type)
         # PETSc.Options().setValue("-pc_fieldsplit_ksp_atol", 0*self.inner_atol)
         # PETSc.Options().setValue("-pc_fieldsplit_ksp_rtol", 0*self.inner_rtol)
         # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", 3)
         # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", self.inner_maxiter)
-        PETSc.Options().setValue("-pc_fieldsplit_pc_type", self.inner_pc_type)
-        if self.inner_pc_type == "lu":
-            PETSc.Options().setValue("-pc_fieldsplit_pc_factor_mat_solver_type", "mumps")
-        if self.inner_pc_type == "hypre":
-            # Kirby, Mitchell (2017).
-            PETSc.Options().setValue("-pc_hypre_boomeramg_relax_type_all",
-                                     "symmetric-SOR/Jacobi")
-            PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_type", "boomeramg")
-            PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_P_max", 4)
-            PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_agg_nl", 1)
-            PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_agg_num_paths", 2)
-            PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_coarsen_type", "HMIS")
-            PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_interp_type", "ext+i")
-            PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_no_CF", True)
-        if self.inner_pc_type == "gamg":
-            # PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_type", "agg")
-            PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_agg_nsmooths", 1)
-            PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_sym_graph", True)
+        # PETSc.Options().setValue("-pc_fieldsplit_pc_type", self.inner_pc_type)
+        # if self.inner_pc_type == "lu":
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_factor_mat_solver_type", "mumps")
+        # if self.inner_pc_type == "hypre":
+        #     # Kirby, Mitchell (2017).
+        #     PETSc.Options().setValue("-pc_hypre_boomeramg_relax_type_all",
+        #                              "symmetric-SOR/Jacobi")
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_type", "boomeramg")
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_P_max", 4)
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_agg_nl", 1)
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_agg_num_paths", 2)
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_coarsen_type", "HMIS")
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_interp_type", "ext+i")
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_no_CF", True)
+        # if self.inner_pc_type == "gamg":
+        #     # PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_type", "agg")
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_agg_nsmooths", 1)
+        #     PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_sym_graph", True)
         solver.setFromOptions()
         pc.setFromOptions()
+        pc.setUp()  # Must be called after set from options
+        ksps = pc.getFieldSplitSubKSP()
+        for ksp in ksps:
+            ksp.setFromOptions()
 
     def setUp(self, pc):
         t0_setup = time()
@@ -179,10 +187,11 @@ class PreconditionerCC(object):
         for solver, mat in zip(self.ksps_elliptic, self.matrices_elliptic):
             self.setup_elliptic_solver(solver, mat)
 
-        if self.inner_pc_type == "lu":
-            self.setup_elliptic_solver(self.ksp_fp, self.Mfp_fp)
-        else:
-            self.setup_fieldsplit(self.ksp_fp, self.Mfp_fp)
+        if not self.flag_3_way:
+            if self.inner_pc_type == "lu":
+                self.setup_elliptic_solver(self.ksp_fp, self.Mfp_fp)
+            else:
+                self.setup_fieldsplit(self.ksp_fp, self.Mfp_fp)
         parprint("---- [Preconditioner] Set up in {}s".format(time() - t0_setup))
 
     def apply(self, pc, x, y):

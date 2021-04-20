@@ -1,6 +1,7 @@
 from petsc4py import PETSc
 from mpi4py import MPI
 from lib.Printing import parprint
+from lib.AAR import AAR
 from time import perf_counter as time
 
 
@@ -30,7 +31,6 @@ def converged(_ksp, _it, _rnorm, *args, **kwargs):
 
     error_abs = max(res_s_a, res_f_a, res_p_a)
     error_rel = max(res_s_r, res_f_r, res_p_r)
-
     if kwargs['monitor']:
         width = 11
         if _it == 0:
@@ -82,7 +82,6 @@ class Solver:
         maxiter = self.parameters["solver maxiter"]
         monitor_convergence = self.parameters["solver monitor"]
         if self.parameters["solver type"] == "aar":
-            from lib.AAR import AAR
             order = self.parameters["AAR order"]
             p = self.parameters["AAR p"]
             omega = self.parameters["AAR omega"]
@@ -91,11 +90,11 @@ class Solver:
                               rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
         else:
             solver = PETSc.KSP().create()
+            solver.setOptionsPrefix("global_")
             solver.setInitialGuessNonzero(True)
             solver.setOperators(self.A.mat())
             solver.setType(self.parameters["solver type"])
             solver.setTolerances(rtol, atol, 1e20, maxiter)
-            PETSc.Options().setValue("-ksp_gmres_modifiedgramschmidt", None)
             solver.setPC(self.PC)
             if solver_type == "gmres":
                 solver.setGMRESRestart(maxiter)
@@ -132,19 +131,20 @@ class Solver:
         b.restoreSubVector(self.index_map.is_s, b_s)
         b.restoreSubVector(self.index_map.is_f, b_f)
         b.restoreSubVector(self.index_map.is_p, b_p)
-        if b0_s < 1e-10:
-            b0_s = 1
-        if b0_f < 1e-10:
-            b0_f = 1
-        if b0_p < 1e-10:
-            b0_p = 1
+        # if b0_s < 1e-13:
+        #     b0_s = 1
+        # if b0_f < 1e-13:
+        #     b0_f = 1
+        # if b0_p < 1e-13:
+        #     b0_p = 1
         kwargs = {'index_map': self.index_map, 'b': b, 'dummy': dummy, 'dummy_subs': (
             dummy_s, dummy_f, dummy_p), 'b0_norms': (b0_s, b0_f, b0_p), 'monitor': monitor_convergence}
         if solver_type == "aar":
             self.solver = AAR(order, p, omega, beta, self.A.mat(), x0=None, pc=self.PC, atol=atol,
                               rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
         else:
-            self.solver.setConvergenceTest(converged, args, kwargs)
+            pass
+            # self.solver.setConvergenceTest(converged, args, kwargs)
         parprint("---- [Solver] Solver set up in {}s".format(time() - t0_setup))
 
     def getIterationNumber(self):
