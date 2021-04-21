@@ -4,6 +4,7 @@ from lib.IndexSet import IndexSet
 from lib.Solver import Solver
 from lib.Printing import parprint
 from mpi4py import MPI
+from time import perf_counter as time
 import dolfin as df
 
 
@@ -36,6 +37,7 @@ class Poromechanics(AbstractPhysics):
         """
         Set boundary conditions to both physics. Assumed to be constant.
         """
+        t0 = time()
         self.bcs = bcs
         self.bcs_diff = bcs_diff
 
@@ -48,6 +50,7 @@ class Poromechanics(AbstractPhysics):
                 if dof in bc_vals:
                     bcs_sub_pressure.append(i)
         self.bcs_sub_pressure = bcs_sub_pressure
+        parprint("---- [BC] Created inverse pressure BC in {:.3f}s".format(time() - t0))
 
     def create_solver(self, A, P, P_diff, b):
 

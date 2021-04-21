@@ -4,6 +4,26 @@ import numpy as np
 from itertools import chain
 from time import perf_counter as time
 from lib.Printing import parprint
+from numba import jit
+
+
+@jit(nopython=True, cache=True)
+def get_local_fp_dofs(dofs_fp_global, dofmap_f, dofmap_p):
+    # Find the corresponding local indexex in f-p subspace
+    nf = len(dofmap_f)
+    np = len(dofmap_p)
+    dofs_f = [0] * nf
+    dofs_p = [0] * np
+    i_f = i_p = i = 0
+    for dof in dofs_fp_global:
+        if dof in dofmap_f:
+            dofs_f[i_f] = i
+            i_f += 1
+        elif dof in dofmap_p:
+            dofs_p[i_p] = i
+            i_p += 1
+        i += 1
+    return dofs_f, dofs_p
 
 
 class IndexSet:
@@ -19,7 +39,6 @@ class IndexSet:
         self.dofmap_f = V.sub(1).dofmap().dofs()
         self.dofmap_p = V.sub(2).dofmap().dofs()
         self.dofmap_fp = sorted(self.dofmap_f + self.dofmap_p)
-
         # Note that f and p dofmaps are used for the fieldsplit Preconditioner
         # in the 2-way splittings, so they are still useful but bear a different meaning.
 
@@ -28,21 +47,11 @@ class IndexSet:
             comm = MPI.COMM_WORLD
             dofs_fp_global = self.dofmap_fp.copy()
             dofs_fp_global = comm.allgather(dofs_fp_global)
-            dofs_fp_global = list(chain(*dofs_fp_global))
+            dofs_fp_global = np.array(tuple(chain(*dofs_fp_global)))  # Concat and sort
 
-            # Then find the corresponding local indexex in f-p subspace
-            dofs_f = []
-            dofs_p = []
-            i = 0
-            for dof in dofs_fp_global:
-                if dof in self.dofmap_f:
-                    dofs_f.append(i)
-                elif dof in self.dofmap_p:
-                    dofs_p.append(i)
-                i = i + 1
-            # Replace global dofmaps with f-p dofmaps
-            self.dofmap_f = dofs_f
-            self.dofmap_p = dofs_p
+            # Replace global dofmaps with f-p dofmaps.
+            self.dofmap_f, self.dofmap_p = get_local_fp_dofs(
+                dofs_fp_global, self.dofmap_f, self.dofmap_p)
 
         # and Index Sets
         self.is_s = PETSc.IS().createGeneral(self.dofmap_s)

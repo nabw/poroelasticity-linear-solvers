@@ -89,35 +89,6 @@ class PreconditionerCC(object):
         solver.setType(self.inner_ksp_type)
         pc = solver.getPC()
         pc.setType(self.inner_pc_type)
-
-        # if self.inner_monitor:
-        #     PETSc.Options().setValue("-ksp_monitor", None)
-        # else:
-        #     PETSc.Options().setValue("-ksp_monitor_cancel", None)
-
-        if self.inner_ksp_type != "preonly":
-            solver.setTolerances(self.inner_rtol, self.inner_atol, 1e20, self.inner_maxiter)
-
-        if self.inner_pc_type == "lu":
-            factor_method = "mumps"  # Better scaling than the others
-            pc.setFactorSolverType(factor_method)
-
-        if self.inner_pc_type == "hypre":
-            PETSc.Options().setValue("-pc_hypre_type", "boomeramg")
-            if mat in (self.Ms_s, self.Mf_f):
-                PETSc.Options().setValue("-pc_hypre_boomeramg_grid_sweeps_all", 5)  # This improves solid a lot
-            PETSc.Options().setValue("-pc_hypre_boomeramg_relax_type_all",
-                                     "symmetric-SOR/Jacobi")
-            if mat != self.Ms_s:
-                PETSc.Options().setValue("-pc_hypre_boomeramg_agg_nl", 1)
-                PETSc.Options().setValue("-pc_hypre_boomeramg_agg_num_paths", 2)
-                PETSc.Options().setValue("-pc_hypre_boomeramg_P_max", 4)
-            PETSc.Options().setValue("-pc_hypre_boomeramg_coarsen_type", "HMIS")
-            PETSc.Options().setValue("-pc_hypre_boomeramg_interp_type", "ext+i")
-            PETSc.Options().setValue("-pc_hypre_boomeramg_no_CF", True)
-
-        if self.inner_pc_type == "gamg":
-            pc.setGAMGSmooths(1)
         pc.setFromOptions()
         solver.setFromOptions()
 
@@ -126,46 +97,12 @@ class PreconditionerCC(object):
         # Prefer GMRES for saddle point problem with asymmetric preconditioner
         solver.setType("gmres")
         solver.setInitialGuessNonzero(True)
-        # solver.setNormType(2)  # 2 unpreconditioned, 1 preconditioned
-
-        # if self.inner_monitor:
-        #     PETSc.Options().setValue("-ksp_monitor", None)
-        # else:
-        #     PETSc.Options().setValue("-ksp_monitor_cancel", None)
 
         pc = solver.getPC()
         pc.setType('fieldsplit')
         pc.setFieldSplitIS((None, self.is_f))
         pc.setFieldSplitIS((None, self.is_p))
-        # Kirby, Mitchell (2017).
-        # PETSc.Options().setValue("-pc_fieldsplit_ksp_gmres_modifiedgramschmidt", None)
-        # PETSc.Options().setValue("-pc_fieldsplit_type", "schur")
-        # PETSc.Options().setValue("-pc_fieldsplit_schur_fact_type", "full")  # diag, full, lower
-        # PETSc.Options().setValue("-pc_fieldsplit_schur_precondition", "selfp")  # selfp (SIMPLE), a11
-        # PETSc.Options().setValue("-pc_fieldsplit_ksp_type", "preonly")
-        # PETSc.Options().setValue("-pc_fieldsplit_ksp_type", self.inner_ksp_type)
-        # PETSc.Options().setValue("-pc_fieldsplit_ksp_atol", 0*self.inner_atol)
-        # PETSc.Options().setValue("-pc_fieldsplit_ksp_rtol", 0*self.inner_rtol)
-        # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", 3)
-        # PETSc.Options().setValue("-pc_fieldsplit_ksp_maxiter", self.inner_maxiter)
-        # PETSc.Options().setValue("-pc_fieldsplit_pc_type", self.inner_pc_type)
-        # if self.inner_pc_type == "lu":
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_factor_mat_solver_type", "mumps")
-        # if self.inner_pc_type == "hypre":
-        #     # Kirby, Mitchell (2017).
-        #     PETSc.Options().setValue("-pc_hypre_boomeramg_relax_type_all",
-        #                              "symmetric-SOR/Jacobi")
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_type", "boomeramg")
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_P_max", 4)
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_agg_nl", 1)
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_agg_num_paths", 2)
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_coarsen_type", "HMIS")
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_interp_type", "ext+i")
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_hypre_boomeramg_no_CF", True)
-        # if self.inner_pc_type == "gamg":
-        #     # PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_type", "agg")
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_agg_nsmooths", 1)
-        #     PETSc.Options().setValue("-pc_fieldsplit_pc_gamg_sym_graph", True)
+
         solver.setFromOptions()
         pc.setFromOptions()
         pc.setUp()  # Must be called after set from options

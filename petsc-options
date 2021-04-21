@@ -1,14 +1,15 @@
+#All hypre and fieldsplit params from [Kirby, Mitchell (2017)].
 # Global solver params, using the given one as example
 #-global_ksp_type gmres
 #-global_ksp_atol 0
 #-global_ksp_rtol 0
 -global_ksp_monitor
 
-# Start with solid solver params
+# Start with solid solver params.
 #-s_ksp_monitor
 -s_ksp_type gmres
 -s_ksp_atol 0.0
--s_ksp_rtol 1e-4
+-s_ksp_rtol 1e-2
 -s_pc_type hypre
 -s_pc_hypre_type boomeramg
 -s_pc_hypre_boomeramg_P_max 4
@@ -61,7 +62,7 @@
 # FP fieldsplit solver
 #-fp_ksp_monitor
 -fp_ksp_type gmres
--fp_ksp_rtol 1e-4
+-fp_ksp_rtol 1e-2
 -fp_ksp_gmres_modifiedgramschmidt
 -fp_pc_fieldsplit_type schur
 -fp_pc_fieldsplit_schur_fact_type lower
