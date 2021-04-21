@@ -65,7 +65,7 @@
 -fp_ksp_gmres_modifiedgramschmidt
 -fp_pc_fieldsplit_type schur
 -fp_pc_fieldsplit_schur_fact_type lower
--fp_pc_fieldsplit_schur_precondition a11
+-fp_pc_fieldsplit_schur_precondition selfp
 # U solver
 -fp_fieldsplit_0_ksp_type preonly
 -fp_fieldsplit_0_pc_type hypre
