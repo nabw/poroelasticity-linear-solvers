@@ -13,13 +13,12 @@
 -s_pc_type hypre
 -s_pc_hypre_type boomeramg
 -s_pc_hypre_boomeramg_P_max 4
--s_pc_hypre_boomeramg_grid_sweeps_all 1
+-s_pc_hypre_boomeramg_grid_sweeps_all 5
 -s_pc_hypre_boomeramg_agg_nl 1
 -s_pc_hypre_boomeramg_agg_num_paths 2
 -s_pc_hypre_boomeramg_coarsen_type HMIS
 -s_pc_hypre_boomeramg_interp_type ext+i
 -s_pc_hypre_boomeramg_no_CF true
--s_pc_hypre_boomeramg_grid_sweeps_all 2
 
 # Fluid solver
 #-f_ksp_monitor
@@ -66,7 +65,7 @@
 -fp_ksp_gmres_modifiedgramschmidt
 -fp_pc_fieldsplit_type schur
 -fp_pc_fieldsplit_schur_fact_type lower
--fp_pc_fieldsplit_schur_precondition selfp
+-fp_pc_fieldsplit_schur_precondition a11
 # U solver
 -fp_fieldsplit_0_ksp_type preonly
 -fp_fieldsplit_0_pc_type hypre

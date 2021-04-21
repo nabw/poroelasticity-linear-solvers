@@ -120,7 +120,7 @@ class AAR:
 
             if self.monitor_convergence:
                 parprint("---- Iteration [{}] {:3}\tabs={:1.2e}\trel={:1.2e}".format(
-                    current_type, it, err_abs, err_rel), flush=True)
+                    current_type, it, err_abs, err_rel))
 
         # Update solution and return number of iterations
         self.xk.copy(sol)

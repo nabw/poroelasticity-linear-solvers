@@ -18,10 +18,13 @@ class Poromechanics(AbstractPhysics):
                                              df.FiniteElement('CG', self.mesh.ufl_cell(), parameters["fe degree pressure"])))
         self.V = V
         self.two_way = True
+        self.three_way = False
         if self.parameters["pc type"] == "diagonal 3-way":
             self.two_way = False
+            self.three_way = True
+
         parprint("---- Problem dofs={}, solving with {} procs".format(V.dim(), MPI.COMM_WORLD.size))
-        self.assembler = PoromechanicsAssembler(parameters, V)
+        self.assembler = PoromechanicsAssembler(parameters, V, self.three_way)
 
         self.index_map = IndexSet(V, self.two_way)
         # Start by assembling system matrices
@@ -71,10 +74,13 @@ class Poromechanics(AbstractPhysics):
         b = self.assembler.getRHS(t, self.us_nm1, self.us_nm2, self.uf_nm1, self.p_nm1)
 
         for bc in self.bcs:
-            for obj in [A, P, P_diff, b]:
+            for obj in [A, P, b]:
                 bc.apply(obj)
-        for bc in self.bcs_diff:
-            bc.apply(P_diff)
+            if self.three_way:
+                bc.apply(P_diff)
+        if self.three_way:
+            for bc in self.bcs_diff:
+                bc.apply(P_diff)
         if self.first_timestep:
             self.create_solver(A, P, P_diff, b)
             self.first_timestep = False

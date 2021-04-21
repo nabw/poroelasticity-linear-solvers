@@ -66,10 +66,13 @@ class PreconditionerCC(object):
         self.Mp_p = self.M.createSubMatrix(self.is_p, self.is_p)
         self.Mfp_s = self.M.createSubMatrix(self.is_fp, self.is_s)
         self.Mfp_fp = self.M.createSubMatrix(self.is_fp, self.is_fp)
-        self.Mp_diff = self.M_diff.createSubMatrix(self.is_p, self.is_p)
 
         # Only diagonal blocks, used to create solvers
-        self.matrices_elliptic = (self.Ms_s, self.Mf_f, self.Mp_p, self.Mp_diff)
+        self.matrices_elliptic = [self.Ms_s, self.Mf_f, self.Mp_p]
+
+        if self.flag_3_way:
+            self.Mp_diff = self.M_diff.createSubMatrix(self.is_p, self.is_p)
+            self.matrices_elliptic.append(self.Mp_diff)
 
     def create_solvers(self):
         self.ksp_s = PETSc.KSP().create()
@@ -80,9 +83,13 @@ class PreconditionerCC(object):
         self.ksp_p.setOptionsPrefix("p_")
         self.ksp_fp = PETSc.KSP().create()
         self.ksp_fp.setOptionsPrefix("fp_")
-        self.ksp_p_diff = PETSc.KSP().create()
-        self.ksp_p_diff.setOptionsPrefix("diff_")
-        self.ksps_elliptic = (self.ksp_s, self.ksp_f, self.ksp_p, self.ksp_p_diff)
+
+        self.ksps_elliptic = [self.ksp_s, self.ksp_f, self.ksp_p]
+
+        if self.flag_3_way:
+            self.ksp_p_diff = PETSc.KSP().create()
+            self.ksp_p_diff.setOptionsPrefix("diff_")
+            self.ksps_elliptic.append(self.ksp_p_diff)
 
     def setup_elliptic_solver(self, solver, mat):
         solver.setOperators(mat, mat)

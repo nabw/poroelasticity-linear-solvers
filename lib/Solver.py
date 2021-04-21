@@ -139,12 +139,7 @@ class Solver:
         #     b0_p = 1
         kwargs = {'index_map': self.index_map, 'b': b, 'dummy': dummy, 'dummy_subs': (
             dummy_s, dummy_f, dummy_p), 'b0_norms': (b0_s, b0_f, b0_p), 'monitor': monitor_convergence}
-        if solver_type == "aar":
-            self.solver = AAR(order, p, omega, beta, self.A.mat(), x0=None, pc=self.PC, atol=atol,
-                              rtol=rtol, maxiter=maxiter, monitor_convergence=monitor_convergence)
-        else:
-            pass
-            # self.solver.setConvergenceTest(converged, args, kwargs)
+
         parprint("---- [Solver] Solver set up in {}s".format(time() - t0_setup))
 
     def getIterationNumber(self):

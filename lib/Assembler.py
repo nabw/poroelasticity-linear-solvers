@@ -9,12 +9,13 @@ class PoromechanicsAssembler:
     Class in charge of assembling the problem matrix and rhs.
     """
 
-    def __init__(self, parameters, V):
+    def __init__(self, parameters, V, three_way):
         self.parameters = parameters
         self.prec_type = parameters["pc type"]
 
         # Geometric and discretization info
         self.V = V
+        self.three_way = three_way
         self.mesh = V.mesh()
         self.dim = V.mesh().geometric_dimension()
         self.dsNs = parameters["dsNs"]
@@ -170,7 +171,9 @@ class PoromechanicsAssembler:
             a_f = a_f
             a_p = a_p
         assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p, tensor=self.P)
-        assemble(self.adim_s * a_s + self.adim_f * a_f + self.adim_p * a_p_diff, tensor=self.P_diff)
+        if self.three_way:
+            assemble(self.adim_s * a_s + self.adim_f * a_f +
+                     self.adim_p * a_p_diff, tensor=self.P_diff)
 
         parprint("---- [Assembler] Assembly A, P time = {}s".format(time() - t0_assemble))
 
