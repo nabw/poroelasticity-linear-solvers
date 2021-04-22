@@ -200,7 +200,7 @@ class PoromechanicsAssembler:
         rhs_s_n = dot(self.fs_sur(t), v) * self.dsNs + self.phis * \
             self.rhos * dot(self.fs_vol(t), v) * dx
         lhs_s_n = dot(self.rhos * self.idt**2 * self.phis * (-2. * us_nm1 + us_nm2), v) * \
-            dx - self.phi0**2 * dot(self.ikf * (- self.idt * (- us_nm1)), w) * dx
+            dx - self.phi0**2 * dot(self.ikf * (- self.idt * (- us_nm1)), v) * dx
         r_s = rhs_s_n - lhs_s_n
 
         # Compute fluid residual
