@@ -251,8 +251,12 @@ class PreconditionerCC(object):
 
     def print_timings(self):
         parprint("\n===== Timing preconditioner: {:.3f}s".format(self.t_total))
-        parprint("\tSolid solver: {:.3f}s\n\tFluid solver: {:.3f}s\n\tPressure solver: {:.3f}s".format(
-            self.t_solid, self.t_fluid, self.t_press))
+        if self.flag_3_way:
+            parprint("\tSolid solver: {:.3f}s\n\tFluid solver: {:.3f}s\n\tPressure solver: {:.3f}s".format(
+                self.t_solid, self.t_fluid, self.t_press))
+        else:
+            parprint(
+                "\tSolid solver: {:.3f}s\n\tFluid-pressure solver: {:.3f}s".format(self.t_solid, self.t_fluid))
         parprint("\n\tAllocation time: {:.3f}".format(self.t_alloc))
 
 
