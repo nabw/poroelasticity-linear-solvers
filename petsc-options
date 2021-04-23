@@ -13,7 +13,7 @@
 -s_pc_type hypre
 -s_pc_hypre_type boomeramg
 -s_pc_hypre_boomeramg_P_max 4
--s_pc_hypre_boomeramg_grid_sweeps_all 5
+-s_pc_hypre_boomeramg_grid_sweeps_all 1
 -s_pc_hypre_boomeramg_agg_nl 1
 -s_pc_hypre_boomeramg_agg_num_paths 2
 -s_pc_hypre_boomeramg_coarsen_type HMIS
@@ -71,7 +71,7 @@
 -fp_fieldsplit_0_pc_type hypre
 -fp_fieldsplit_0_pc_hypre_type boomeramg
 -fp_fieldsplit_0_pc_hypre_boomeramg_P_max 4
--fp_fieldsplit_0_pc_hypre_boomeramg_grid_sweeps_all 2
+#-fp_fieldsplit_0_pc_hypre_boomeramg_grid_sweeps_all 2
 -fp_fieldsplit_0_pc_hypre_boomeramg_agg_nl 1
 -fp_fieldsplit_0_pc_hypre_boomeramg_agg_num_paths 2
 -fp_fieldsplit_0_pc_hypre_boomeramg_coarsen_type HMIS
@@ -81,7 +81,7 @@
 -fp_fieldsplit_1_ksp_type preonly
 -fp_fieldsplit_1_pc_type hypre
 -fp_fieldsplit_1_pc_hypre_type boomeramg
--fp_fieldsplit_1_pc_hypre_boomeramg_grid_sweeps_all 10
+#-fp_fieldsplit_1_pc_hypre_boomeramg_grid_sweeps_all 10
 -fp_fieldsplit_1_pc_hypre_boomeramg_P_max 4
 -fp_fieldsplit_1_pc_hypre_boomeramg_agg_nl 1
 -fp_fieldsplit_1_pc_hypre_boomeramg_agg_num_paths 2

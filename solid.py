@@ -129,43 +129,43 @@ assemble(r_s, tensor=b)
 for bc in bcs:
     bc.apply(A, b)
 
-
-def build_nullspace(V, x):
-    # Function to build null space for 2D elasticity
-    #
-    # Create list of vectors for null space
-    nullspace_basis = [x.copy() for i in range(6)]
-
-    Z_rot = [Expression(('0', 'x[2]', '-x[1]'), degree=1),
-             Expression(('-x[2]', '0', 'x[0]'), degree=1),
-             Expression(('x[1]', '-x[0]', '0'), degree=1)]
-
-    # Build translational null space basis - 2D problem
-    #
-    V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
-    V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
-    V.sub(2).dofmap().set(nullspace_basis[2], 1.0)
-
-    u = Function(V)
-    for i in range(3):
-        u.interpolate(Z_rot[i])
-        nullspace_basis[3+i].set_local(u.vector())
-
-    for x in nullspace_basis:
-        x.apply("insert")
-
-    # Create vector space basis and orthogonalize
-    basis = VectorSpaceBasis(nullspace_basis)
-    basis.orthonormalize()
-
-    return basis
-
-
-null_space = build_nullspace(V, sol.vector())
-null_space.orthogonalize(b)
-
-# Attach near nullspace to matrix
-A.set_near_nullspace(null_space)
+# All of this is useful for GAMG only... (See FEniCS documentation)
+# def build_nullspace(V, x):
+#     # Function to build null space for 2D elasticity
+#     #
+#     # Create list of vectors for null space
+#     nullspace_basis = [x.copy() for i in range(6)]
+#
+#     Z_rot = [Expression(('0', 'x[2]', '-x[1]'), degree=1),
+#              Expression(('-x[2]', '0', 'x[0]'), degree=1),
+#              Expression(('x[1]', '-x[0]', '0'), degree=1)]
+#
+#     # Build translational null space basis - 2D problem
+#     #
+#     V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
+#     V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
+#     V.sub(2).dofmap().set(nullspace_basis[2], 1.0)
+#
+#     u = Function(V)
+#     for i in range(3):
+#         u.interpolate(Z_rot[i])
+#         nullspace_basis[3+i].set_local(u.vector())
+#
+#     for x in nullspace_basis:
+#         x.apply("insert")
+#
+#     # Create vector space basis and orthogonalize
+#     basis = VectorSpaceBasis(nullspace_basis)
+#     basis.orthonormalize()
+#
+#     return basis
+#
+#
+# null_space = build_nullspace(V, sol.vector())
+# null_space.orthogonalize(b)
+#
+# # Attach near nullspace to matrix
+# A.set_near_nullspace(null_space)
 Amat = A.mat()
 parprint("Assembled in {}s".format(time() - tt))
 
