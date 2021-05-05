@@ -107,8 +107,8 @@ class PreconditionerCC(object):
 
         pc = solver.getPC()
         pc.setType('fieldsplit')
-        pc.setFieldSplitIS((None, self.is_f))
         pc.setFieldSplitIS((None, self.is_p))
+        pc.setFieldSplitIS((None, self.is_f))
 
         solver.setFromOptions()
         pc.setFromOptions()

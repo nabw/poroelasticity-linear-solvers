@@ -7,7 +7,7 @@
 
 # Start with solid solver params.
 #-s_ksp_monitor
--s_ksp_type gmres
+-s_ksp_type preonly
 -s_ksp_atol 0.0
 -s_ksp_rtol 1e-2
 -s_pc_type hypre
@@ -62,12 +62,15 @@
 #-fp_ksp_monitor
 -fp_ksp_type gmres
 -fp_ksp_rtol 1e-2
+-fp_ksp_atol 0.0
 -fp_ksp_gmres_modifiedgramschmidt
 -fp_pc_fieldsplit_type schur
 -fp_pc_fieldsplit_schur_fact_type lower
 -fp_pc_fieldsplit_schur_precondition selfp
 # U solver
--fp_fieldsplit_0_ksp_type preonly
+-fp_fieldsplit_0_ksp_type cg
+-fp_fieldsplit_0_ksp_rtol 1e-2
+-fp_fieldsplit_0_ksp_atol 0.0
 -fp_fieldsplit_0_pc_type hypre
 -fp_fieldsplit_0_pc_hypre_type boomeramg
 -fp_fieldsplit_0_pc_hypre_boomeramg_P_max 4
@@ -78,7 +81,9 @@
 -fp_fieldsplit_0_pc_hypre_boomeramg_interp_type ext+i
 -fp_fieldsplit_0_pc_hypre_boomeramg_no_CF true
 # SCHUR
--fp_fieldsplit_1_ksp_type preonly
+-fp_fieldsplit_1_ksp_type cg
+-fp_fieldsplit_1_ksp_atol 0.0
+-fp_fieldsplit_1_ksp_rtol 1e-2
 -fp_fieldsplit_1_pc_type hypre
 -fp_fieldsplit_1_pc_hypre_type boomeramg
 #-fp_fieldsplit_1_pc_hypre_boomeramg_grid_sweeps_all 10
