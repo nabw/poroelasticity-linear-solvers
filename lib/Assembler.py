@@ -115,6 +115,27 @@ class PoromechanicsAssembler:
                    + div(self.phi0 * vf) * q
                    + div(self.phis * self.idt * us) * q) * dx
             a_p_diff = 0*q*dx
+        elif self.prec_type == "undrained 3-way":
+            N = self.ks / self.phis**2
+
+            a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
+                   + inner(hooke(eps(us)), eps(v))
+                   + N * div(self.phis * us) * div(self.phis * v)
+                   - self.phi0 ** 2 * dot(self.ikf * (- self.idt * us), v)) * dx
+
+            a_f = (self.rhof * self.idt * self.phi0 * dot(vf, w)
+                   + 2. * self.mu_f *
+                   inner(self.phi0 * eps(vf), eps(w))
+                   - p * div(self.phi0 * w)
+                   + self.phi0 ** 2 * dot(self.ikf * (vf - self.idt * us), w)) * dx
+            beta_CC1 = self.phi0 / Constant(2. * self.mu_f / self.dim)
+            beta_CC2 = inv(self.rhof * self.idt / self.phi0 + self.ikf)
+
+            a_p = (self.phis**2 * self.idt / self.ks * p * q
+                   + beta_CC1 * p * q) * dx
+
+            a_p_diff = (self.phis**2 * self.idt / self.ks * p * q
+                        + dot(beta_CC2 * grad(p), grad(q))) * dx
         elif self.prec_type == "diagonal":
             beta_s_hat = self.betas
 

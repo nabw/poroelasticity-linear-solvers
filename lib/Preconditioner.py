@@ -112,10 +112,11 @@ class PreconditionerCC(object):
 
         solver.setFromOptions()
         pc.setFromOptions()
-        pc.setUp()  # Must be called after set from options
-        ksps = pc.getFieldSplitSubKSP()
-        for ksp in ksps:
-            ksp.setFromOptions()
+        # pc.setUp()  # Must be called after set from options
+        if pc.getType() == "fieldsplit":
+            ksps = pc.getFieldSplitSubKSP()
+            for ksp in ksps:
+                ksp.setFromOptions()
 
     def setUp(self, pc):
         t0_setup = time()
@@ -275,12 +276,12 @@ class Preconditioner:
         self.inner_accel_order = parameters["inner accel order"]
         self.inner_monitor = parameters["inner monitor"]
         self.bcs_sub_pressure = bcs_sub_pressure
-        if self.pc_type not in ("undrained", "diagonal", "diagonal 3-way", "lu"):
+        if self.pc_type not in ("undrained", "undrained 3-way", "diagonal", "diagonal 3-way", "lu"):
             import sys
             sys.exit("pc type must be one of lu, undrained, diagonal, diagonal 3-way.")
 
     def get_pc(self):
-        flag_3_way = self.pc_type == "diagonal 3-way"
+        flag_3_way = self.pc_type in ("diagonal 3-way", "undrained 3-way")
         ctx = PreconditionerCC(self.P.mat(), self.P_diff.mat(), self.index_map, flag_3_way, self.inner_ksp_type,
                                self.inner_pc_type, self.inner_rtol, self.inner_atol, self.inner_maxiter, self.inner_monitor, 1.0, 0.1, self.inner_accel_order, self.bcs_sub_pressure)
         self.pc = PETSc.PC().create()

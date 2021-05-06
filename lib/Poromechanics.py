@@ -19,7 +19,7 @@ class Poromechanics(AbstractPhysics):
         self.V = V
         self.two_way = True
         self.three_way = False
-        if self.parameters["pc type"] == "diagonal 3-way":
+        if "3-way" in self.parameters["pc type"]:
             self.two_way = False
             self.three_way = True
 

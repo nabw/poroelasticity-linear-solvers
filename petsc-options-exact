@@ -1,0 +1,36 @@
+#All hypre and fieldsplit params from [Kirby, Mitchell (2017)].
+# Global solver params, using the given one as example
+-global_ksp_type gmres
+#-global_ksp_gmres_restart 100
+-global_ksp_pc_side right
+#-global_ksp_atol 1e-6
+#-global_ksp_rtol 1e-6
+#-global_ksp_monitor
+
+# Start with solid solver params.
+#-s_ksp_monitor
+-s_ksp_type preonly
+-s_pc_type lu
+-s_pc_factor_mat_solver_type mumps
+
+# Fluid solver
+#-f_ksp_monitor
+-f_ksp_type preonly
+-f_pc_type lu
+-f_pc_factor_mat_solver_type mumps
+
+# Pressure solver
+#-p_ksp_monitor
+-p_ksp_type preonly
+-p_pc_type lu
+-p_pc_factor_mat_solver_type mumps
+
+# Pressure diff solver
+-diff_ksp_type preonly
+-diff_pc_type lu
+-diff_pc_factor_mat_solver_type mumps
+
+# FP solver
+-fp_ksp_type preonly
+-fp_pc_type lu
+-fp_pc_factor_mat_solver_type mumps

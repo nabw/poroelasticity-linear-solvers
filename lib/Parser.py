@@ -19,7 +19,7 @@ class Parser:
         parser.add_option("--solver-type", type="str", dest="solver_type",
                           help="Type of linear solver: gmres, cg, aar")
         parser.add_option("--pc-type", type="str", dest="pc_type",
-                          help="Type of splitting preconditioner: diagonal, undrained, diagonal 3-way")
+                          help="Type of splitting preconditioner: diagonal, undrained, diagonal 3-way, undrained 3-way")
         parser.add_option("--fe-solid", type="int", dest="fe_s",
                           help="Finite element degree of solid")
         parser.add_option("--monitor", action="store_true", dest="monitor",

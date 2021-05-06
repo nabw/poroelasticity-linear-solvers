@@ -91,7 +91,7 @@ class Solver:
         else:
             solver = PETSc.KSP().create()
             solver.setOptionsPrefix("global_")
-            solver.setInitialGuessNonzero(True)
+            # solver.setInitialGuessNonzero(True)
             solver.setOperators(self.A.mat())
             solver.setType(self.parameters["solver type"])
             solver.setTolerances(rtol, atol, 1e20, maxiter)
