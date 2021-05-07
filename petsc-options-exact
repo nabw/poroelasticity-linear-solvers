@@ -1,7 +1,6 @@
 #All hypre and fieldsplit params from [Kirby, Mitchell (2017)].
 # Global solver params, using the given one as example
 -global_ksp_type gmres
-#-global_ksp_gmres_restart 100
 -global_ksp_pc_side right
 #-global_ksp_atol 1e-6
 #-global_ksp_rtol 1e-6

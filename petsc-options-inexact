@@ -4,7 +4,7 @@
 -global_ksp_pc_side right
 #-global_ksp_atol 0
 #-global_ksp_rtol 0
--global_ksp_monitor
+#-global_ksp_monitor
 
 # Start with solid solver params.
 #-s_ksp_monitor
