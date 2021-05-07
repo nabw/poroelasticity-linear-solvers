@@ -1,12 +1,12 @@
 # Test robustness of 2D solvers with respect to mesh size, so we use only direct solvers in the diagonal blocks.
 # NOTE: Run from repo root.
 
-DO_EXACT=true
+DO_EXACT=false
 DO_INEXACT=true
 
 ROOT_DIR=~/poroelasticity-linear-solvers
 OUTDIR=~/poroelasticity-linear-solvers/output
-NCORES=16
+NCORES=8
 SWELLING_2WAY=$OUTDIR/robustness-2d-swelling-2way.out
 SWELLING_3WAY=$OUTDIR/robustness-2d-swelling-3way.out
 FOOTING_2WAY=$OUTDIR/robustness-2d-footing-2way.out

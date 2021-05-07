@@ -1,17 +1,18 @@
 #All hypre and fieldsplit params from [Kirby, Mitchell (2017)].
 # Global solver params, using the given one as example
 -global_ksp_type gmres
--global_ksp_pc_side right
+#-global_ksp_pc_side right
+-global_ksp_norm_type unpreconditioned
 #-global_ksp_atol 0
-#-global_ksp_rtol 0
+#-global_ksp_rtol 1e-10
 #-global_ksp_monitor
 
 # Start with solid solver params.
 #-s_ksp_monitor
 -s_ksp_type cg
-#-s_ksp_pc_side right
+-s_ksp_norm_type unpreconditioned
 -s_ksp_atol 0.0
--s_ksp_rtol 1e-2
+-s_ksp_rtol 1e-1
 -s_pc_type hypre
 -s_pc_hypre_type boomeramg
 -s_pc_hypre_boomeramg_P_max 4
@@ -25,7 +26,7 @@
 # Fluid solver
 #-f_ksp_monitor
 -f_ksp_type cg
-#-f_ksp_pc_side right
+-f_ksp_norm_type unpreconditioned
 -f_ksp_atol 0.0
 -f_ksp_rtol 1e-2
 -f_pc_type hypre
@@ -43,7 +44,7 @@
 -p_ksp_type cg
 -p_ksp_atol 0.0
 -p_ksp_rtol 1e-2
-#-p_ksp_pc_side right
+-p_ksp_norm_type unpreconditioned
 -p_pc_type hypre
 -p_pc_hypre_type boomeramg
 -p_pc_hypre_boomeramg_P_max 4
@@ -54,10 +55,10 @@
 -p_pc_hypre_boomeramg_no_CF true
 
 # Pressure diff solver
--diff_ksp_type cg
+-diff_ksp_type preonly
 -diff_ksp_atol 0.0
 -diff_ksp_rtol 1e-2
-#-diff_ksp_pc_side right
+-diff_ksp_norm_type unpreconditioned
 -diff_pc_type hypre
 -diff_pc_hypre_type boomeramg
 -diff_pc_hypre_boomeramg_P_max 4
@@ -69,8 +70,8 @@
 
 # FP fieldsplit solver
 #-fp_ksp_monitor
--fp_ksp_type gmres
--fp_ksp_pc_side right
+-fp_ksp_type preonly
+#-fp_ksp_norm_type unpreconditioned
 -fp_ksp_rtol 1e-2
 -fp_ksp_atol 0.0
 -fp_ksp_gmres_modifiedgramschmidt
@@ -79,9 +80,11 @@
 -fp_pc_fieldsplit_schur_precondition selfp
 # U solver
 -fp_fieldsplit_0_ksp_type cg
-#-fp_fieldsplit_0_ksp_pc_side right
--fp_fieldsplit_0_ksp_rtol 1e-2
+#-fp_fieldsplit_0_ksp_monitor
+#-fp_fieldsplit_0_ksp_norm_type unpreconditioned
+-fp_fieldsplit_0_ksp_rtol 1e-4
 -fp_fieldsplit_0_ksp_atol 0.0
+-fp_fieldsplit_0_ksp_max_it 10
 -fp_fieldsplit_0_pc_type hypre
 -fp_fieldsplit_0_pc_hypre_type boomeramg
 -fp_fieldsplit_0_pc_hypre_boomeramg_P_max 4
@@ -92,13 +95,17 @@
 -fp_fieldsplit_0_pc_hypre_boomeramg_interp_type ext+i
 -fp_fieldsplit_0_pc_hypre_boomeramg_no_CF true
 # SCHUR
--fp_fieldsplit_1_ksp_type cg
-#-fp_fieldsplit_1_ksp_pc_side right
--fp_fieldsplit_1_ksp_atol 0.0
--fp_fieldsplit_1_ksp_rtol 1e-2
--fp_fieldsplit_1_pc_type hypre
+-fp_fieldsplit_1_ksp_type preonly
+#-fp_fieldsplit_1_ksp_gmres_modifiedgramschmidt
+#-fp_fieldsplit_1_ksp_monitor
+#-fp_fieldsplit_1_ksp_norm_type unpreconditioned
+#-fp_fieldsplit_1_ksp_atol 0.0
+#-fp_fieldsplit_1_ksp_rtol 1e-2
+#-fp_fieldsplit_1_ksp_max_it 100
+-fp_fieldsplit_1_pc_type lu
+-fp_fieldsplit_1_pc_mat_factor_solver_type mumps
 -fp_fieldsplit_1_pc_hypre_type boomeramg
-#-fp_fieldsplit_1_pc_hypre_boomeramg_grid_sweeps_all 10
+-fp_fieldsplit_1_pc_hypre_boomeramg_grid_sweeps_all 5
 -fp_fieldsplit_1_pc_hypre_boomeramg_P_max 4
 -fp_fieldsplit_1_pc_hypre_boomeramg_agg_nl 1
 -fp_fieldsplit_1_pc_hypre_boomeramg_agg_num_paths 2
