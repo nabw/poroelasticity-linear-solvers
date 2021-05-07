@@ -9,6 +9,7 @@
 # Start with solid solver params.
 #-s_ksp_monitor
 -s_ksp_type preonly
+-s_ksp_pc_side right
 -s_ksp_atol 0.0
 -s_ksp_rtol 1e-2
 -s_pc_type hypre
@@ -24,6 +25,7 @@
 # Fluid solver
 #-f_ksp_monitor
 -f_ksp_type preonly
+-f_ksp_pc_side right
 -f_ksp_atol 0.0
 -f_ksp_rtol 1e-4
 -f_pc_type hypre
@@ -39,6 +41,7 @@
 # Pressure solver
 #-p_ksp_monitor
 -p_ksp_type preonly
+-p_ksp_pc_side right
 -p_pc_type hypre
 -p_pc_hypre_type boomeramg
 -p_pc_hypre_boomeramg_P_max 4
@@ -50,6 +53,7 @@
 
 # Pressure diff solver
 -diff_ksp_type preonly
+-diff_ksp_pc_side right
 -diff_pc_type hypre
 -diff_pc_hypre_type boomeramg
 -diff_pc_hypre_boomeramg_P_max 4
@@ -62,6 +66,7 @@
 # FP fieldsplit solver
 #-fp_ksp_monitor
 -fp_ksp_type gmres
+-fp_ksp_pc_side right
 -fp_ksp_rtol 1e-2
 -fp_ksp_atol 0.0
 -fp_ksp_gmres_modifiedgramschmidt
@@ -70,6 +75,7 @@
 -fp_pc_fieldsplit_schur_precondition selfp
 # U solver
 -fp_fieldsplit_0_ksp_type cg
+-fp_fieldsplit_0_ksp_pc_side right
 -fp_fieldsplit_0_ksp_rtol 1e-2
 -fp_fieldsplit_0_ksp_atol 0.0
 -fp_fieldsplit_0_pc_type hypre
@@ -83,6 +89,7 @@
 -fp_fieldsplit_0_pc_hypre_boomeramg_no_CF true
 # SCHUR
 -fp_fieldsplit_1_ksp_type cg
+-fp_fieldsplit_1_ksp_pc_side right
 -fp_fieldsplit_1_ksp_atol 0.0
 -fp_fieldsplit_1_ksp_rtol 1e-2
 -fp_fieldsplit_1_pc_type hypre
