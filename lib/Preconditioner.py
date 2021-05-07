@@ -103,17 +103,16 @@ class PreconditionerCC(object):
         solver.setOperators(mat, mat)
         # Prefer GMRES for saddle point problem with asymmetric preconditioner
         solver.setType("gmres")
-        solver.setInitialGuessNonzero(True)
 
         pc = solver.getPC()
         pc.setType('fieldsplit')
-        pc.setFieldSplitIS((None, self.is_p))
-        pc.setFieldSplitIS((None, self.is_f))
 
         solver.setFromOptions()
         pc.setFromOptions()
-        # pc.setUp()  # Must be called after set from options
         if pc.getType() == "fieldsplit":
+            pc.setFieldSplitIS((None, self.is_p))
+            pc.setFieldSplitIS((None, self.is_f))
+            pc.setUp()  # Must be called after set from options
             ksps = pc.getFieldSplitSubKSP()
             for ksp in ksps:
                 ksp.setFromOptions()
