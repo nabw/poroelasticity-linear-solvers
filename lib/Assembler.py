@@ -187,6 +187,28 @@ class PoromechanicsAssembler:
             a_p_diff = (self.phis**2 * self.idt / self.ks * p * q
                         + beta_p * p * q
                         + dot(beta_CC2 * grad(p), grad(q))) * dx
+        elif self.prec_type == "diagonal 3-way-II":
+            beta_s_hat = self.betas
+
+            a_s = (self.rhos * self.idt**2 * self.phis * dot(us, v)
+                   + inner(hooke(eps(us)), eps(v))
+                   - p * div(self.phis * v)
+                   - self.phi0**2 * dot(self.ikf * (vf - (1. + beta_s_hat) * self.idt * us), v)) * dx
+
+            beta_f_hat = self.betaf
+            beta_p_hat = self.betap
+            beta_p = beta_p_hat * self.phis**2 / \
+                (self.dt * (2. * self.mu_s / self.dim + self.lmbda))
+
+            a_f = (self.rhof * self.idt * self.phi0 * dot(vf, w)
+                   + 2. * self.mu_f * inner(self.phi0 * eps(vf), eps(w))
+                   + 1. / (self.phis**2 * self.idt / self.ks + beta_p) * div(self.phi0 * vf) * div(self.phi0 * w)
+                   + (1. + beta_f_hat) * self.phi0**2 * dot(self.ikf * vf, w)) * dx
+
+            a_p = (self.phis**2 * self.idt / self.ks * p * q
+                   + beta_p * p * q
+                   + div(self.phi0 * vf) * q) * dx
+            a_p_diff = 0.0*q*dx
         else:
             a_s = a_s
             a_f = a_f
