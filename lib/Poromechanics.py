@@ -23,7 +23,7 @@ class Poromechanics(AbstractPhysics):
             self.two_way = False
             self.three_way = True
 
-        parprint("---- Problem dofs={}, solving with {} procs".format(V.dim(), MPI.COMM_WORLD.size))
+        parprint("---- Problem dofs={}, h={}, solving with {} procs".format(V.dim(), mesh.hmin(), MPI.COMM_WORLD.size))
         self.assembler = PoromechanicsAssembler(parameters, V, self.three_way)
 
         self.index_map = IndexSet(V, self.two_way)

@@ -23,7 +23,7 @@ PETSC_EXACT=$ROOT_DIR/petsc-options-exact
 # First test exact solvers
 if [ $DO_EXACT = true ]; then
     # Swelling 
-    for N in 10 20 40 80 160 320; do
+    for N in 10 20 40 80 160; do
         echo "" | tee -a $SWELLING_2WAY
         echo "Swelling 2 way N=$N"
         mpirun -np $NCORES python swelling.py -N $N --petsc-options $PETSC_EXACT --pc-type "diagonal"| tee -a $SWELLING_2WAY
@@ -32,7 +32,7 @@ if [ $DO_EXACT = true ]; then
         mpirun -np $NCORES python swelling.py -N $N --petsc-options $PETSC_EXACT --pc-type "diagonal 3-way"| tee -a $SWELLING_3WAY
     done
     # Footing
-    for N in 10 20 40 80 160; do
+    for N in 10 20 40 80; do
         echo "" | tee -a $FOOTING_2WAY
         echo "Footing 2 way"
         mpirun -np $NCORES python footing.py -N $N --petsc-options $PETSC_EXACT --pc-type "undrained"| tee -a $FOOTING_2WAY
@@ -51,7 +51,7 @@ PETSC_INEXACT=$ROOT_DIR/petsc-options-inexact
 
 if [ $DO_INEXACT = true ]; then
     # Swelling 
-    for N in 10 20 40 80 160 320; do
+    for N in 10 20 40 80 160; do
         echo "" | tee -a $SWELLING_2WAY
         echo "Swelling 2 way inexact"
         mpirun -np $NCORES python swelling.py -N $N --petsc-options $PETSC_INEXACT --pc-type "diagonal"| tee -a $SWELLING_2WAY
@@ -60,7 +60,7 @@ if [ $DO_INEXACT = true ]; then
         mpirun -np $NCORES python swelling.py -N $N --petsc-options $PETSC_INEXACT --pc-type "diagonal 3-way"| tee -a $SWELLING_3WAY
     done
     # Footing
-    for N in 10 20 40 80 160; do
+    for N in 10 20 40 80; do
         echo "" | tee -a $FOOTING_2WAY
         echo "Footing 2 way inexact"
         mpirun -np $NCORES python footing.py -N $N --petsc-options $PETSC_INEXACT --pc-type "undrained"| tee -a $FOOTING_2WAY
