@@ -1,7 +1,7 @@
 # Test robustness of 2D solvers with respect to mesh size, so we use only direct solvers in the diagonal blocks.
 # NOTE: Run from repo root.
 
-DO_EXACT=false
+DO_EXACT=true
 DO_INEXACT=true
 
 ROOT_DIR=~/poroelasticity-linear-solvers
